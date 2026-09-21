@@ -6,6 +6,7 @@
   "shell": {
     "scripts": {
       "serve": "zola serve",
+      "serve-lan": "zola serve --interface 0.0.0.0 --base-url \"http://$(hostname -I | awk '{print $1}')\"",
       "build": "zola build",
       "check": "zola check"
     }

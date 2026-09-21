@@ -8,6 +8,7 @@ Zola is provided by [Devbox](https://www.jetify.com/devbox) (pinned in `devbox.j
 
 ```sh
 devbox run serve    # http://127.0.0.1:1111 with live reload
+devbox run serve-lan  # same, but reachable from other hosts at http://<this-host-ip>:1111
 devbox run build    # output in public/
 devbox run check    # build and check links
 ```
