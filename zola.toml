@@ -1,0 +1,32 @@
+# Overridden at deploy time by the Pages workflow, so a custom domain
+# only needs to be configured in the repo's Pages settings.
+base_url = "https://geng-language.github.io"
+title = "Geng"
+description = "The Geng programming language"
+default_language = "en"
+
+compile_sass = true
+minify_html = false
+build_search_index = false
+generate_feeds = true
+feed_filenames = ["atom.xml"]
+
+[markdown]
+insert_anchor_links = "right"
+github_alerts = true
+smart_punctuation = true
+bottom_footnotes = true
+
+[markdown.highlighting]
+error_on_missing_language = true
+light_theme = "github-light"
+dark_theme = "github-dark"
+extra_grammars = ["syntaxes/geng.tmLanguage.json"]
+
+[extra]
+repo_url = "https://github.com/geng-language"
+nav = [
+  { name = "Docs", url = "/docs/" },
+  { name = "Reference", url = "/reference/" },
+  { name = "Blog", url = "/blog/" },
+]

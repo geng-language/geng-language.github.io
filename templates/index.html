@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <h1>{{ config.title }}</h1>
+    <p class="tagline">{{ section.description }}</p>
+    <p class="actions">
+      <a class="button primary" href="{{ get_url(path='@/docs/getting-started.md') }}">Get started</a>
+      <a class="button" href="{{ get_url(path='@/docs/_index.md') }}">Read the docs</a>
+    </p>
+  </div>
+</section>
+<section class="wrap prose home">
+  {{ section.content | safe }}
+</section>
+{% endblock content %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }} · {{ config.title }}{% endblock title %}
+{% block description %}{{ page.description or config.description }}{% endblock description %}
+
+{% block content %}
+{# The top-level section (e.g. docs/) drives the sidebar, even for nested pages. #}
+{% set nav_section = get_section(path=page.ancestors[1] if page.ancestors | length > 1 else page.ancestors[-1]) %}
+<div class="wrap docs-layout">
+  {% include "partials/sidebar.html" %}
+  <article class="prose">
+    <h1>{{ page.title }}</h1>
+    {{ page.content | safe }}
+    {% if page.higher or page.lower %}
+    <nav class="pager">
+      {% if page.higher %}<a class="prev" href="{{ page.higher.permalink }}">&larr; {{ page.higher.title }}</a>{% endif %}
+      {% if page.lower %}<a class="next" href="{{ page.lower.permalink }}">{{ page.lower.title }} &rarr;</a>{% endif %}
+    </nav>
+    {% endif %}
+  </article>
+  {% if page.toc | length > 0 %}
+  <aside class="toc" aria-label="On this page">
+    <p class="toc-title">On this page</p>
+    <ul>
+      {% for h in page.toc %}
+      <li><a href="{{ h.permalink }}">{{ h.title }}</a>
+        {% if h.children %}<ul>{% for c in h.children %}<li><a href="{{ c.permalink }}">{{ c.title }}</a></li>{% endfor %}</ul>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  {% endif %}
+</div>
+{% endblock content %}
