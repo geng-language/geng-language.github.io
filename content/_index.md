@@ -16,11 +16,32 @@ programs **simple** to think about.
 
 But **Geng** was designed to run your programs where you need them:
 
-* As native Linux executables, for speed
-* In Javascript, in the browser, or as a node.js program
-* As WASM, for the browser, or anywhere that accepts WASM
-* On the Erlang BEAM, for extreme uptimes
-* On the JVM, for interoperability
+<div class="platforms">
+<table>
+<tr>
+<td><span class="logo-tile os-cluster"><img src="/icons/linux.svg" alt="Linux"><img src="/icons/apple.svg" alt="macOS"><img src="/icons/windows.svg" alt="Windows"></span></td>
+<td><span class="logo-tile"><img src="/icons/javascript.svg" alt="" width="48" height="48"></span></td>
+<td><span class="logo-tile"><img src="/icons/wasm.svg" alt="" width="48" height="48"></span></td>
+<td><span class="logo-tile"><img src="/icons/erlang.svg" alt="" width="48" height="48"></span></td>
+<td><span class="logo-tile"><img src="/icons/java.svg" alt="" width="48" height="48"></span></td>
+</tr>
+<tr>
+<td><strong>Native</strong></td>
+<td><strong>JavaScript</strong></td>
+<td><strong>WebAssembly</strong></td>
+<td><strong>Erlang BEAM</strong></td>
+<td><strong>JVM</strong></td>
+</tr>
+<tr>
+<td>native executables and libraries, for speed</td>
+<td>in the browser, or as a Node.js program</td>
+<td>for the browser, or anywhere that accepts WASM</td>
+<td>for extreme uptimes</td>
+<td>for interoperability</td>
+</tr>
+</table>
+</div>
+
 
 The same program, on all these platforms.
 
