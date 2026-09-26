@@ -12,6 +12,14 @@ TODO.
 
 TODO.
 
-## Keywords
+## Identifiers
+
+TODO.
+
+## Keywords and operators
+
+See [Keywords](@/reference/keywords.md) and [Operators](@/reference/operators.md).
+
+## Layout and indentation
 
 TODO.

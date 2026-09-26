@@ -2,47 +2,100 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "geng",
   "scopeName": "source.geng",
-  "fileTypes": ["geng"],
+  "fileTypes": [
+    "geng"
+  ],
   "patterns": [
-    { "include": "#comments" },
-    { "include": "#strings" },
-    { "include": "#numbers" },
-    { "include": "#keywords" },
-    { "include": "#constants" },
-    { "include": "#function-calls" }
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#types"
+    }
   ],
   "repository": {
     "comments": {
       "patterns": [
-        { "name": "comment.line.double-slash.geng", "match": "//.*$" },
-        { "name": "comment.block.geng", "begin": "/\\*", "end": "\\*/" }
+        {
+          "name": "comment.line.double-dash.geng",
+          "match": "--.*$"
+        },
+        {
+          "name": "comment.block.geng",
+          "begin": "\\{-",
+          "end": "-\\}"
+        }
       ]
     },
     "strings": {
-      "name": "string.quoted.double.geng",
-      "begin": "\"",
-      "end": "\"",
       "patterns": [
-        { "name": "constant.character.escape.geng", "match": "\\\\." }
+        {
+          "name": "string.quoted.triple.geng",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.geng",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.geng",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.geng",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.geng",
+          "match": "'(\\\\.|[^'])'"
+        }
       ]
     },
     "numbers": {
       "name": "constant.numeric.geng",
-      "match": "\\b(0x[0-9A-Fa-f_]+|0b[01_]+|[0-9][0-9_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?)\\b"
+      "match": "\\b(0x[0-9A-Fa-f]+|[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?)\\b"
     },
     "keywords": {
       "patterns": [
-        { "name": "keyword.control.geng", "match": "\\b(if|else|while|for|in|return|break|continue|match)\\b" },
-        { "name": "keyword.other.geng", "match": "\\b(fn|let|var|const|type|struct|enum|import|pub)\\b" }
+        {
+          "name": "keyword.control.geng",
+          "match": "\\b(if|then|else|when|is|let|in)\\b"
+        },
+        {
+          "name": "keyword.other.geng",
+          "match": "\\b(module|exposing|import|as|type|alias|port|infix)\\b"
+        },
+        {
+          "name": "keyword.operator.geng",
+          "match": "(\\|>|<\\||>>|<<|\\+\\+|==|/=|<=|>=|&&|\\|\\||//|->|[+\\-*/^<>=|\\\\])"
+        }
       ]
     },
     "constants": {
       "name": "constant.language.geng",
-      "match": "\\b(true|false|nil)\\b"
+      "match": "\\b(True|False)\\b"
     },
-    "function-calls": {
-      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
-      "captures": { "1": { "name": "entity.name.function.geng" } }
+    "types": {
+      "name": "entity.name.type.geng",
+      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
     }
   }
 }

@@ -1,0 +1,59 @@
++++
+title = "Cheat sheet: Python, Go, C++ to Geng"
+description = "Side-by-side equivalents of common constructs."
+weight = 25
++++
+
+> [!NOTE]
+> Outline only. Each section will be a table with columns Python | Go | C++ | Geng.
+> Where a construct has no Geng equivalent, the Geng cell says what to do instead.
+
+## Basics
+
+- Comments, line and block.
+- Naming a value (`x = 1`, `x := 1`, `auto x = 1;`, `x = 1` in a `let`).
+- Function definition and call.
+- Type annotations.
+- String concatenation and interpolation (Geng has no interpolation: `++` and `String.fromInt`).
+
+## Control flow
+
+- `if`/`else` (and Geng's mandatory `else`).
+- `switch`/`match` → `when ... is`.
+- `for` loop over a collection → `Array.map` / `Array.foldl`.
+- `while` loop → recursion.
+- `break` / `continue` / early `return` → no equivalent; restructure.
+
+## Data
+
+- Arrays / lists / slices / vectors → `Array`.
+- Dicts / maps → `Dict`.
+- Sets → `Set`.
+- Structs / classes → records.
+- Enums and tagged unions → custom types.
+- Tuples → records (Gren and Geng have no tuples).
+- Updating a field.
+
+## Missing values and errors
+
+- `None` / `nil` / `nullptr` → `Maybe`.
+- `raise` / `return err` / `throw` → `Result`.
+- `try`/`except`, `if err != nil`, `try`/`catch` → `when ... is` on a `Result`, or `Result.andThen`.
+
+## Functions
+
+- Lambdas.
+- Higher-order functions.
+- Methods → plain functions taking the value as the last argument (so `|>` works).
+- Default and keyword arguments → a record argument.
+
+## Program structure
+
+- Modules, packages, imports.
+- Entry point (`if __name__ == "__main__"`, `func main()`, `int main()`).
+- Visibility (`_name`, lowercase, `private`) → `exposing`.
+
+## Things with no equivalent
+
+- Mutation, global variables, inheritance, exceptions, `goto`, pointers.
+- One line each on why, and what to use instead.

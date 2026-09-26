@@ -1,0 +1,35 @@
++++
+title = "Compiler messages"
+description = "How to read Geng's error messages, and a catalog of common ones."
+weight = 60
++++
+
+> [!NOTE]
+> Outline only.
+
+## Reading a message
+
+- Anatomy of a message: title, location, the offending code, explanation, hint.
+- Errors vs warnings (if Geng has warnings).
+- Machine-readable output for editors and CI.
+
+## Catalog
+
+- One entry per message: the message title, a minimal program that triggers it,
+  why it happens, and how to fix it.
+- Grouped by phase:
+  - Parsing (indentation, missing `else`, unbalanced brackets).
+  - Names and imports (unknown name, ambiguous import, module not found, import cycle).
+  - Types (type mismatch, infinite type, missing annotation where required).
+  - Pattern matching (missing cases, redundant cases).
+  - Records (missing field, unknown field, update of a non-record).
+  - Targets (API not available on the selected target).
+  - Packages (dependency conflicts, invalid project file).
+
+## Coming from other languages
+
+- Common first-week mistakes from Python, Go and C++ users, and the messages they produce.
+
+### Open questions
+
+- Does each message have a stable code (e.g. `G0123`) that entries can be keyed by?
