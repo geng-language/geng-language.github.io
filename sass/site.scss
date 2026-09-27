@@ -48,16 +48,20 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* Jade palette. */
 :root {
-  --bg: #ffffff;
-  --bg-alt: #f6f7f9;
-  --fg: #1c1f24;
-  --muted: #5d6573;
-  --border: #e2e5ea;
-  --accent: #2f5bd3;
+  --bg: #f7faf8;
+  --bg-alt: #eaf3ee;
+  --fg: #14241c;
+  --muted: #4f6358;
+  --border: #d3e2da;
+  --accent: #0b7a53;
   --accent-fg: #ffffff;
-  --code-bg: #f6f8fa;
+  --code-bg: #eef5f1;
   --logo-bg: #ffffff;
+  --hero-bg: #0e3b2c;
+  --hero-fg: #effaf4;
+  --hero-muted: #9ccfb6;
   --font-display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -65,18 +69,26 @@
   color-scheme: light dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111418;
-    --bg-alt: #181c22;
-    --fg: #e4e7ec;
-    --muted: #9aa3b2;
-    --border: #2a3039;
-    --accent: #7ea2ff;
-    --accent-fg: #0b1020;
-    --code-bg: #0d1117;
-  }
+@mixin dark-palette {
+  --bg: #0c1511;
+  --bg-alt: #122019;
+  --fg: #e2ede7;
+  --muted: #93a99d;
+  --border: #213229;
+  --accent: #4dd4a0;
+  --accent-fg: #06140e;
+  --code-bg: #0f1b16;
+  --hero-bg: #0f2c21;
+  --hero-muted: #8fc7ac;
 }
+
+/* Follow the system unless the visitor picked a mode with the header switch
+   (data-mode on <html>, set in base.html). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) { @include dark-palette; }
+}
+:root[data-mode="dark"] { @include dark-palette; color-scheme: dark; }
+:root[data-mode="light"] { color-scheme: light; }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -135,6 +147,23 @@ a { color: var(--accent); }
   }
 }
 
+.mode-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  &:hover { color: var(--fg); }
+  svg { width: 1.125rem; height: 1.125rem; }
+  /* Show only the icon for the current setting. */
+  [data-icon] { display: none; }
+}
+:root:not([data-mode]) .mode-switch [data-icon="auto"],
+:root[data-mode="light"] .mode-switch [data-icon="light"],
+:root[data-mode="dark"] .mode-switch [data-icon="dark"] { display: block; }
+
 .site-footer {
   border-top: 1px solid var(--border);
   color: var(--muted);
@@ -145,12 +174,13 @@ a { color: var(--accent); }
 /* Home */
 
 .hero {
-  background: var(--bg-alt);
+  background: var(--hero-bg);
+  color: var(--hero-fg);
   border-bottom: 1px solid var(--border);
   padding: 4rem 0;
   text-align: center;
   h1 { font-size: 3.5rem; font-weight: 700; letter-spacing: -0.035em; margin: 0; }
-  .tagline { font-size: 1.25rem; color: var(--muted); }
+  .tagline { font-size: 1.25rem; color: var(--hero-muted); }
 }
 
 .home { max-width: 46rem; padding-top: 1rem; }
@@ -296,6 +326,10 @@ a { color: var(--accent); }
   a { font-weight: 600; }
   time { display: block; color: var(--muted); font-size: 0.875rem; }
 }
+
+/* Zola's highlighter puts color-scheme: light dark inline on each block, which
+   ties its light-dark() colors to the system setting; follow the page instead. */
+.giallo { color-scheme: inherit !important; }
 
 /* Required by Zola's highlighter (giallo) */
 

@@ -1,0 +1,119 @@
+{
+  "name": "geng-jade-dark",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#0f1b16",
+    "editor.foreground": "#dbe7e0"
+  },
+  "tokenColors": [
+    {
+      "scope": [
+        "comment",
+        "punctuation.definition.comment"
+      ],
+      "settings": {
+        "foreground": "#7f968a",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": [
+        "keyword",
+        "storage",
+        "keyword.control",
+        "keyword.other"
+      ],
+      "settings": {
+        "foreground": "#4dd4a0"
+      }
+    },
+    {
+      "scope": [
+        "keyword.operator",
+        "punctuation"
+      ],
+      "settings": {
+        "foreground": "#a6b9af"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.type",
+        "support.type",
+        "support.class",
+        "entity.name.class",
+        "entity.name.namespace"
+      ],
+      "settings": {
+        "foreground": "#e8b86b"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.function",
+        "support.function",
+        "meta.function-call"
+      ],
+      "settings": {
+        "foreground": "#dbe7e0"
+      }
+    },
+    {
+      "scope": [
+        "string",
+        "punctuation.definition.string"
+      ],
+      "settings": {
+        "foreground": "#8ccfe3"
+      }
+    },
+    {
+      "scope": [
+        "constant.character.escape"
+      ],
+      "settings": {
+        "foreground": "#6fe0e0"
+      }
+    },
+    {
+      "scope": [
+        "constant.numeric",
+        "constant.language",
+        "constant.other",
+        "support.constant"
+      ],
+      "settings": {
+        "foreground": "#f2a27e"
+      }
+    },
+    {
+      "scope": [
+        "storage.modifier.attribute",
+        "entity.other.attribute-name"
+      ],
+      "settings": {
+        "foreground": "#c7a8e8"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.tag",
+        "entity.name.section",
+        "support.type.property-name",
+        "variable.other.key"
+      ],
+      "settings": {
+        "foreground": "#4dd4a0"
+      }
+    },
+    {
+      "scope": [
+        "variable.parameter",
+        "variable.other.readwrite"
+      ],
+      "settings": {
+        "foreground": "#dbe7e0"
+      }
+    }
+  ]
+}
