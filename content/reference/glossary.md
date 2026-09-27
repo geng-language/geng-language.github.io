@@ -14,13 +14,21 @@ weight = 90
 - Annotation
 - Arity
 - Associativity
+- Attribute (`@derive`, `@extern`, ...)
 - Backend / target
+- BEAM
+- Capability
+- Class
 - Combinator
 - Composition
+- Constraint
 - Constructor
+- Core (the compiler's intermediate representation)
 - Currying
 - Custom type
 - Decoder / encoder
+- Defaulting
+- Deriving
 - Effect
 - Exhaustive (pattern match)
 - Expression
@@ -29,6 +37,7 @@ weight = 90
 - Higher-order function
 - Immutable
 - Inference
+- Instance
 - Lambda
 - Module
 - Opaque type
@@ -39,11 +48,15 @@ weight = 90
 - Pure function
 - Record
 - Referential transparency
+- Runtime (in `geng.toml`)
 - Side effect
+- Source
+- Specialization
 - Structural sharing
 - Tagged union
 - Tail call
 - Task
 - Type alias
 - Type variable
-- Unit
+- Unit (the empty record `{}`)
+- Wrapping arithmetic

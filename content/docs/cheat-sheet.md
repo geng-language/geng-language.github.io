@@ -29,7 +29,8 @@ weight = 25
 - Arrays / lists / slices / vectors → `Array`.
 - Dicts / maps → `Dict`.
 - Sets → `Set`.
-- Structs / classes → records.
+- Structs / classes → records (no methods, no inheritance).
+- Interfaces / traits → no user-defined classes yet; pass functions or records of functions.
 - Enums and tagged unions → custom types.
 - Tuples → records (Gren and Geng have no tuples).
 - Updating a field.
@@ -50,7 +51,7 @@ weight = 25
 ## Program structure
 
 - Modules, packages, imports.
-- Entry point (`if __name__ == "__main__"`, `func main()`, `int main()`).
+- Entry point (`if __name__ == "__main__"`, `func main()`, `int main()`) → `main : Task Never {}`.
 - Visibility (`_name`, lowercase, `private`) → `exposing`.
 
 ## Things with no equivalent

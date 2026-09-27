@@ -81,7 +81,11 @@
         },
         {
           "name": "keyword.other.geng",
-          "match": "\\b(module|exposing|import|as|type|alias|port|infix)\\b"
+          "match": "\\b(module|exposing|import|as|type|alias|class|instance|where)\\b"
+        },
+        {
+          "name": "storage.modifier.attribute.geng",
+          "match": "@[a-zA-Z]+"
         },
         {
           "name": "keyword.operator.geng",

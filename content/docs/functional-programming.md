@@ -61,20 +61,17 @@ weight = 20
 ## How does anything happen? Effects
 
 - If functions cannot do I/O, how does a program print, read files or talk to the network?
-- The idea: your program *describes* effects (as `Task`/`Cmd` values) and the runtime performs them.
+- The idea: your program *describes* effects as `Task` values, and the runtime performs them. `main` is itself a `Task`.
 - Analogy: building a list of instructions vs executing them.
 - Link to [Common patterns](@/docs/patterns.md) for concrete I/O examples.
 
 ## What you give up, and what you get
 
-- Give up: mutation, loops, `null`, exceptions, classes, "just print something here to debug".
+- Give up: mutation, loops, `null`, exceptions, class hierarchies.
+- Print debugging still works: `Debug.log` in development builds, and `inspect` anywhere.
 - Get: no crashes, fearless refactoring, compiler as a pair programmer.
 - Honest note on the learning curve.
 
 ## Where to go next
 
 - [Cheat sheet](@/docs/cheat-sheet.md), [Error handling](@/docs/error-handling.md), [Common patterns](@/docs/patterns.md).
-
-### Open questions
-
-- Does Geng keep Elm's `Debug.log`? If not, what replaces "print debugging"?

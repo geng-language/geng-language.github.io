@@ -21,10 +21,13 @@ weight = 60
   - Parsing (indentation, missing `else`, unbalanced brackets).
   - Names and imports (unknown name, ambiguous import, module not found, import cycle).
   - Types (type mismatch, infinite type, missing annotation where required).
+  - Classes (no instance, e.g. `==` on functions; ambiguous numeric type).
   - Pattern matching (missing cases, redundant cases).
   - Records (missing field, unknown field, update of a non-record).
-  - Targets (API not available on the selected target).
-  - Packages (dependency conflicts, invalid project file).
+  - Targets and runtimes (`EXTERNS DO NOT SERVE THE TARGET`, `INCOMPATIBLE RUNTIME`, `NO BACKEND FOR THE TARGET`).
+  - Capabilities (`CAPABILITY IN A DEPENDENCY`).
+  - Refused Gren constructs (`port module`, `effect module`).
+  - Packages (dependency conflicts, invalid project file, `CORE IS NOT A DEPENDENCY`).
 
 ## Coming from other languages
 

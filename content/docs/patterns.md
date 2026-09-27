@@ -38,7 +38,11 @@ weight = 50
 ## Sequencing effects
 
 - Doing one task after another with `Task.andThen`.
-- Running tasks and collecting their results.
+- Running tasks and collecting their results (`Task.sequence`, `Task.concurrent`).
+- Using several cores with `Task.parallel`.
+- A timeout with `Task.race`.
+- Always releasing a resource with `Task.bracket`.
+- Receiving events from a `Source`.
 - Turning a `Result` into a `Task`.
 - Handling a task's error and continuing.
 
@@ -95,3 +99,5 @@ weight = 50
 ### Open questions
 
 - Which of these depend on packages not yet chosen for the standard library? Those recipes can wait or name the package explicitly.
+- Exit codes: there is no designed API for choosing an exit status yet (completing `main` exits 0, a crash exits 1).
+- Native programs (`runtime = "os"`) will use a portable `os` layer that is designed but not built; recipes for files and processes may need a Node.js and an `os` version.

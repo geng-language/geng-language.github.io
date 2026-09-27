@@ -5,43 +5,91 @@ weight = 50
 +++
 
 > [!NOTE]
-> Outline only.
+> Command names and options will be reviewed before the first release.
 
 ## The `geng` command
 
-- One subsection per subcommand: synopsis, options, examples.
-- Likely: `init`, `build`, `run`, `test`, `format`, `package ...`, `docs`.
-- Selecting a target (link to [Platforms](@/docs/platforms.md)).
+One program does everything:
 
-## Project file
+| Command | What it does |
+|---|---|
+| `geng make <Module>` | compile a program whose `main` is in `<Module>` |
+| `geng run <Module>` | compile and run it |
+| `geng release` | build an OTP release (BEAM only) |
+| `geng fmt` | format source files |
+| `geng protobuf` | generate Geng modules from `.proto` files |
+| `geng init` | create a project |
+| `geng package ...` | install, uninstall and check dependencies |
 
-- File name and full format reference: name, version, source directories, dependencies, targets.
-- Application vs package projects.
+There is no REPL, and no `geng test` yet: test suites are ordinary programs.
 
-## Modules
+## Project file: `geng.toml`
 
-- File layout and how module names map to paths.
-- `exposing`, imports, aliases.
-- Cyclic imports (not allowed) and how to break them.
+An application:
+
+```toml
+[application]
+geng = "0.6.0 <= v < 0.7.0"
+runtime = "node"
+
+[dependencies]
+"github.com/geng-language/url" = "6.0.0 <= v < 7.0.0"
+```
+
+A package:
+
+```toml
+[package]
+name = "github.com/geng-language/url"
+version = "6.0.0"
+summary = "Create and parse URLs."
+license = "BSD-3-Clause"
+geng = "0.6.0 <= v < 0.7.0"
+
+[platform]
+runtime = "any"
+
+[modules]
+exposed = ["Url", "Url.Builder", "Url.Parser", "Url.Parser.Query"]
+```
+
+`runtime` and `target` are described in
+[Platforms and targets](@/docs/platforms.md). Source files end in `.geng` and
+live under `src/`.
 
 ## Packages
 
-- Adding, removing and upgrading dependencies.
-- Semantic versioning enforced by the compiler (if kept from Elm/Gren).
-- Publishing a package.
+- **A package is identified by a URL path**, such as
+  `github.com/geng-language/url` or `git.example.com/team/pkg`.
+- **There is no registry.** Packages are fetched directly from git, so
+  private packages on an internal server work the same way as public ones.
+- **Versions are resolved by minimal version selection**, as in Go: the
+  build uses the oldest version that satisfies every requirement.
+- **`geng.lock` pins exact commits.** A build with a lock file does not
+  contact git, and a tag that has moved since it was locked is refused.
+- **`core` comes with the compiler** and is not listed as a dependency.
+- A `[sources]` table can point a package at a local path or another git
+  location, for development.
 
 ## Formatter
 
-- What it does, and that there are no options.
+`geng fmt` formats every file in the project, `geng fmt <paths>` formats
+those files, and `geng fmt --check` changes nothing and fails if any file is
+unformatted, for CI.
 
-## Test runner
+It has no options. Where a construct can be written on one line or across
+several (a record, an array, a list of arguments), it keeps your choice, and
+normalizes everything else. The compiler does not require formatted code.
 
-- Test file layout, running tests, running on multiple targets.
+## Protobuf
+
+`geng protobuf` reads proto3 files and generates one Geng module per
+`.proto` file, with a decoder, an encoder and a default value for each
+message. Protobuf's integer types map directly to Geng's: `int32` is `Int`,
+`int64` is `Int64`, `uint32` is `UInt32`, and `uint64` is `UInt64`. The naming
+rules are part of the language specification, so every project generates the
+same names.
 
 ## Editor support
 
-- Language server, syntax highlighting, supported editors.
-
-### Open questions
-
-- Command and subcommand names, project file name and format.
+Not yet available.
