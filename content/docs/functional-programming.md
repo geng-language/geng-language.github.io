@@ -51,6 +51,7 @@ weight = 20
 - Custom types (tagged unions) vs C++ `std::variant`, Go interfaces with a type switch, Python class hierarchies.
 - Pattern matching with `when ... is`, and why the compiler insists you handle every case.
 - Type inference: you can usually leave annotations out, but top-level annotations are good style.
+- Full story: [Geng's type system](@/docs/type-system.md).
 
 ## No null, no exceptions
 
