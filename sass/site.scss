@@ -186,6 +186,20 @@ a { color: var(--accent); }
 
 .home { max-width: 46rem; padding-top: 1rem; }
 
+// Text wraps around the logo, like a picture in a book.
+.home-logo {
+  float: left;
+  width: 180px;
+  height: auto;
+  margin: 0.25rem 1.75rem 1rem 0;
+}
+.home-logo + h2 { margin-top: 0; }
+.home .platforms { clear: both; }
+
+@media (max-width: 44rem) {
+  .home-logo { width: 110px; margin-right: 1.25rem; }
+}
+
 .platforms {
   overflow-x: auto;
   margin: 1.5rem 0;
