@@ -19,7 +19,7 @@
 <body>
   <header class="site-header">
     <div class="wrap">
-      <a class="brand" href="{{ get_url(path='/') }}">{{ config.title }}</a>
+      <a class="brand" href="{{ get_url(path='/') }}">{{ config.title }}<span class="brand-tagline">{{ config.extra.tagline }}</span></a>
       <nav class="site-nav">
         {% for item in config.extra.nav %}
         <a href="{{ get_url(path=item.url) }}"{% if current_path and current_path is starting_with(pat=item.url) %} aria-current="page"{% endif %}>{{ item.name }}</a>

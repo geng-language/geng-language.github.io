@@ -1,6 +1,6 @@
 +++
 title = "Geng"
-description = "Avoid bugs. Write correct software. Run everywhere."
+description = "Correct by construction. Reliable everywhere."
 +++
 
 ## Why Geng?

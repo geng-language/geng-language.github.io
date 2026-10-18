@@ -25,6 +25,7 @@ extra_grammars = ["syntaxes/geng.tmLanguage.json"]
 extra_themes = ["syntaxes/geng-jade-light.json", "syntaxes/geng-jade-dark.json"]
 
 [extra]
+tagline = "Correct by construction. Reliable everywhere."
 repo_url = "https://github.com/geng-language"
 nav = [
   { name = "Docs", url = "/docs/" },
