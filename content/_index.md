@@ -24,10 +24,11 @@ Your code can still have logic bugs, but it won't crash.
 That should not take a specialist. Richer type systems and formal
 verification tools can prove more, but they ask more of the programmer than
 most projects can afford. Geng comes from Gren and Elm, which keep the
-language small, so programs stay **simple** to read and write. Planned
-[refinement types](@/docs/type-system.md#refinement-types-planned) will let
-the compiler check rules about values too, such as "this number is never
-zero", in the same plain style.
+language small, so programs stay **simple** to read and write.
+[Refinement types](@/docs/type-system.md#refinement-types-planned), designed
+but not yet built, will let the compiler check rules about values too, such
+as "this index is inside the array", in the same plain style. The compiler
+proves them before the program runs, so they cost nothing at run time.
 
 ### Reliable everywhere
 
@@ -84,17 +85,27 @@ toCelsius reading =
         Fahrenheit f ->
             (f - 32.0) * 5.0 / 9.0
 
+latest : (readings : Array Reading where Array.length readings > 0) -> Reading
+latest readings =
+    Array.getAt (Array.length readings - 1) readings
+
 describe : Array Reading -> String
 describe readings =
-    when Array.first readings is
-        Nothing ->
-            "No readings yet"
+    if Array.length readings > 0 then
+        "Latest reading: " ++ String.fromFloat (toCelsius (latest readings)) ++ "°C"
 
-        Just first ->
-            "First reading: " ++ String.fromFloat (toCelsius first) ++ "°C"
+    else
+        "No readings yet"
 ```
 
-There is no `null` here and nothing to throw: an empty array is a case
-the compiler makes you handle.
+There is no `null` here and nothing to throw. `when` must handle every kind
+of `Reading`, or the program does not compile.
+
+`latest` uses a planned refinement type: `where` says the array is never
+empty. `Array.getAt` needs an index inside the array, and the refinement
+proves that `Array.length readings - 1` is one, so there is no `Maybe` to
+unwrap and no bounds check at run time. In `describe`, the `if` gives the
+compiler that fact. Call `latest` without it, and the program does not
+compile.
 
 Geng is not released yet. See [Status and roadmap](@/docs/status.md).
