@@ -17,6 +17,7 @@ weight = 20
 | `let`, `in` | local definitions |
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
+| `where` (in a type) | a [refinement](@/docs/type-system.md#refinement-types-planned): `(n : Int where n > 0)` (planned; read by `geng fmt`, refused by `geng make` until it is checked) |
 
 Attributes start with `@` and come before a declaration:
 

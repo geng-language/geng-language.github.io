@@ -299,25 +299,70 @@ understand.
 ## Refinement types (planned)
 
 > [!NOTE]
-> Refinement types are planned and not yet designed in detail. Geng has no
-> syntax for them yet. The examples below use the notation common in research
-> papers, `{ n : Int | n > 0 }`, which will not be Geng's: in Geng, `{ x | ... }`
-> already means record update.
+> Refinement types are designed but not yet checked. `geng fmt` already reads
+> and formats the syntax below. `geng make` refuses any refined type with
+> `REFINEMENTS NOT CHECKED YET`, so that nothing looks checked when it is
+> not. Details may still change before the checker is built.
 
 ### What they are
 
-A refinement type is a type plus a condition that its values must meet:
+A refinement type is a type plus a condition that its values must meet. In
+Geng, you give an argument or a result a name, then add the condition after
+`where`:
 
-```text
-{ n : Int | n > 0 }           -- an Int greater than zero
-{ n : Int | 0 <= n <= 100 }   -- a percentage
-{ a : Array t | length a > 0 } -- an array that is not empty
+```geng
+(n : Int where n > 0)                  -- an Int greater than zero
+(p : Int where 0 <= p && p <= 100)     -- a percentage
+(a : Array x where Array.length a > 0) -- an array that is not empty
 ```
 
 A value of the refined type is still an `Int` or an `Array`. There is no
 wrapper and nothing to unwrap: you can pass a positive `Int` anywhere an `Int`
 is expected. What changes is that the compiler checks, before the program runs,
 that a value really meets the condition wherever the refined type is required.
+Once checked, the condition is erased. A refined program runs exactly the same
+code as an unrefined one, with no check added at run time.
+
+### Writing one
+
+Refinements go in a function's type signature. A condition may name any
+argument of the same signature, before or after it:
+
+```geng
+-- The index must be inside the array that comes after it.
+getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
+
+-- The result promises something about itself and the arguments.
+pushLast : x -> (a : Array x) -> (r : Array x where Array.length r == Array.length a + 1)
+
+-- A callback's argument: `initialize` promises its function an index in range.
+initialize : (n : Int where 0 <= n) -> ((i : Int where 0 <= i && i < n) -> x) -> Array x
+
+-- An array that is never empty, so its first element always exists.
+firstOf : (a : Array x where Array.length a > 0) -> x
+```
+
+`getAt` needs no `Maybe` and no bounds check, because a call that might read
+outside the array does not compile.
+
+A condition is deliberately small. It can contain:
+
+- integer literals, and the names of the signature's arguments (or the
+  result's own name, in the result's condition);
+- a few *measures* applied to an argument, such as `Array.length`,
+  `Bytes.length`, `String.count`, `Dict.count` and `Set.count`;
+- `+`, `-`, and `*` with a literal on one side;
+- `<`, `<=`, `>`, `>=`, `==` and `/=`;
+- `&&`, `||`, `not`, `True`, `False` and parentheses.
+
+Nothing else: no calls to your own functions, no records and no floats. A
+condition outside this list is a `BAD REFINEMENT` error. The arithmetic in a
+condition is exact, because it is never run: `at + 4 <= Bytes.length b` means
+the same as `at <= Bytes.length b - 4`.
+
+In the first design, refinements go only on the arguments and result of a
+top-level or `let` signature, including callbacks. Type aliases, record
+fields and annotations on expressions cannot be refined yet.
 
 ### Things that are almost refinement types
 
@@ -339,15 +384,15 @@ so a violation is a compile error rather than a crash or an exception.
 The compiler learns facts from your code, the same way you do when you read
 it. Suppose `safeDivide` requires a divisor that is not zero:
 
-```text
-safeDivide : Int -> { d : Int | d /= 0 } -> Int
+```geng
+safeDivide : Int -> (d : Int where d /= 0) -> Int
 ```
 
 Calling it with a literal is fine: the compiler can see that `4` is not zero.
 Calling it with an arbitrary `Int` is a compile error, because that `Int` might
 be zero. Checking first makes it compile:
 
-```text
+```geng
 average : Int -> Int -> Int
 average total count =
     if count /= 0 then
@@ -357,42 +402,121 @@ average total count =
         0
 ```
 
-Inside the `then` branch, `count` has the refined type, because the `if` just
-checked the condition. `when` branches work the same way.
+At each call, the compiler uses what it knows at that point:
 
-Systems that already have refinement types, such as Liquid Haskell and F\*,
-pass these questions to an automated solver. How Geng will check them is part
-of the design still to be done.
+- the tests on the way to the call, such as the `if` above (`when` branches
+  work the same way);
+- the refinements on the calling function's own arguments;
+- the promises in the results of functions it has called;
+- facts it works out for itself about loops.
+
+The last one means that a simple loop needs nothing written for it:
+
+```geng
+sum : Array Int -> Int
+sum a =
+    let
+        go i acc =
+            if i < Array.length a then
+                go (i + 1) (acc + getAt i a)
+
+            else
+                acc
+    in
+    go 0 0
+```
+
+`getAt i a` needs `0 <= i` and `i < Array.length a`. The `if` gives the
+second. The first comes from the loop: `go` starts at 0 and only adds 1, and
+the compiler finds that by itself. As a rule, you write refinements on the
+functions a module exposes, which are its contract, and the compiler infers
+them for private loops.
+
+### Overflow is checked too
+
+`Int` is 32 bits and [wraps on overflow](@/reference/operators.md), and the
+checker knows it. Where the program's own `+` or `-` feeds a refined
+condition, the compiler must also show that the arithmetic does not wrap.
+Arithmetic that feeds no refinement wraps as it always has.
+
+This catches a classic bug. A test like `offset + n <= length` looks right,
+but with `offset = 1` and `n = 2147483647` the sum wraps to a negative number
+and the test passes when it should fail. The compiler rejects it and suggests
+a form that cannot wrap:
+
+| refused: may wrap | accepted: means the same |
+|---|---|
+| `offset + n <= length` | `n <= length - offset` |
+| `(lo + hi) // 2` | `lo + (hi - lo) // 2` |
+
+Geng's own code had exactly this bug in its byte decoder. Designing
+refinement types is what found it.
+
+### When a refinement does not hold
+
+An error says what was required, points at the call, lists each fact the
+compiler had and where it came from, and gives values that break the
+condition. When there is a rewrite the compiler can prove means the same, it
+suggests it. For example, for a loop that counts down:
+
+```text
+-- CANNOT SHOW A REFINEMENT ---------------------------------- src/Compare.geng
+
+`getAt` reads inside the array it is given, and here I cannot show
+`0 <= level`:
+
+52|     Array.getAt level levels
+                    ^^^^^
+What I know here:
+
+    level < Array.length levels   inferred for the loop `compareLevels`
+
+and nothing about `level` from below: the loop calls itself with `level - 1`,
+and with `Array.length levels = 0` and `level = -1` it reads before the
+start.
+```
+
+### In a package
+
+A refinement on an exposed function is part of its type, so changing one is a
+semver change. The package tool works out how big a change it is: asking for
+less of an argument, or promising more in a result, is a minor change; asking
+for more, or promising less, is a major one. Rewriting a condition so it means
+the same thing is a patch.
 
 ### What this could mean for Geng
 
 Some places where Geng today either returns a `Maybe` or picks a safe default
-are places where a refinement type could state the rule instead. For example:
+are places where a refinement type could state the rule instead:
 
-- **Array indexes.** `Array.get` returns a `Maybe` because the index might be
-  out of range. A version that takes an index the compiler knows is in range
-  could return the element directly.
+- **Array and byte indexes.** `Array.get` returns a `Maybe` because the index
+  might be out of range. `getAt` above takes an index the compiler knows is in
+  range, and returns the element directly.
 - **Non-empty arrays.** `Array.first` returns a `Maybe`. For an array known to
   be non-empty, it would not need to.
 - **Division.** Geng defines `x // 0` as `0` so that arithmetic never crashes.
-  A function that requires a non-zero divisor could say so in its type.
+  A function that requires a non-zero divisor can say so in its type.
 - **Number ranges.** Converting an `Int` to a `UInt8` saturates today. A value
   known to be between 0 and 255 could convert without any loss.
-- **Domain rules.** A port number, a percentage or a day of the month could be
-  plain integers with a stated range, instead of opaque wrappers.
 
-These are examples of the kind of rule refinement types can express, not a
-list of planned API changes.
+A survey of the code Geng builds found about 350 `Nothing` and `Err` branches
+written only because a read might fail. The first design removes 122 of them.
+These are examples of what refinement types can express, not a list of
+planned API changes.
 
 ### What they will not do
 
-- **Conditions are limited.** A solver can reason about comparisons,
-  arithmetic and lengths. It cannot decide whether a string is a valid email
-  address. Opaque types stay the right tool for rules like that.
+- **Conditions are limited.** Comparisons, arithmetic and sizes are all a
+  condition can talk about. It cannot decide whether a string is a valid email
+  address. Opaque types stay the right tool for rules like that, and for
+  ranges you want to name once, since type aliases cannot be refined yet.
 - **Run-time checks do not go away.** Data from a file, the network or the user
   is not known in advance. You check it once, with an `if` or a `when`, and
-  from then on the type carries the result. That is the same "parse, don't
+  from then on the compiler carries the result. That is the same "parse, don't
   validate" approach as today, with less wrapping.
+- **The compiler may give up.** When a call needs more cases than the checker
+  tries, it says so rather than guessing. A test just before the call, or a
+  small function with the condition as a refinement, makes it decidable.
 - **They are optional.** Code that never uses a refinement type is ordinary
   Geng.
 

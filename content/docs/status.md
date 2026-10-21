@@ -25,6 +25,7 @@ Expect breaking changes until the first public release.
 | Native backend (C, Linux first) | Next; an early prototype has run |
 | WebAssembly (WasmGC) backend | Planned |
 | JVM backend | Planned |
+| [Refinement types](@/docs/type-system.md#refinement-types-planned) | Designed; `geng fmt` reads the syntax, the checker is not started |
 | `geng fmt` | Built |
 | `geng protobuf` | Built |
 | Package manager (git-based, no registry) | Built; nothing published yet |
