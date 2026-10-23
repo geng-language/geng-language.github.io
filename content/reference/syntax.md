@@ -70,3 +70,24 @@ Indentation is significant, as in Elm:
 
 `geng fmt` produces the standard layout, so in practice you rarely think about
 this.
+
+## Refinements
+
+A [refinement](@/reference/types.md#refinement-types) is written in a type
+signature: a name, the type, and optionally `where` and a condition, all in
+parentheses.
+
+```geng
+safeDivide : Int -> (d : Int where d /= 0) -> Int
+```
+
+`geng fmt` keeps a refined signature on one line, with one space around each
+operator. A signature broken before each `->` stays broken, one argument a
+line:
+
+```geng
+fixed32 :
+    (b : Bytes)
+    -> (at : Int where 0 <= at && at + 4 <= Bytes.length b)
+    -> Int
+```

@@ -131,10 +131,52 @@ value is.
 `type alias` names a type. It does not create a new one, so a `Point` and a
 `{ x : Float, y : Float }` are interchangeable.
 
+An alias can also name a [refinement](#refinement-types). `core`'s `Basics`
+has `Nat`:
+
+```geng
+type alias Nat =
+    (n : Int where 0 <= n)
+```
+
+A refined alias goes only where a signature names a value: `Array Nat`,
+`Maybe Nat` and a record field of type `Nat` are errors.
+
 ## Function types
 
 `a -> b -> c` is a function that takes an `a` and a `b` and returns a `c`.
 Functions are curried: giving it only an `a` returns a function `b -> c`.
+
+## Refinement types
+
+An argument or a result of a signature can be named, `(a : Array x)`, and
+refined with a condition after `where`, `(i : Int where 0 <= i)`. The
+condition may name any argument of the same signature, before or after it:
+
+```geng
+getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
+```
+
+- A refinement goes on the arguments and the result of a top-level or `let`
+  signature, callbacks included, and as the whole body of a type alias. It
+  cannot go on a record field, a variant's argument or an expression's
+  annotation.
+- A condition holds integer literals, the signature's names, the measures
+  `Array.length`, `Bytes.length`, `String.count`, `Dict.count` and
+  `Set.count`, `+`, `-`, `*` with a literal on one side, the six
+  comparisons, and `&&`, `||`, `not`, `True` and `False`. A name read
+  directly must be an `Int`.
+- A condition's arithmetic is exact. The program's own `Int` arithmetic still
+  wraps at 32 bits, and where it feeds a refinement the compiler must show
+  that it does not wrap.
+- A name that no condition reads is an error.
+- The compiler proves each condition at compile time, from the tests on the
+  way to a call, the caller's refinements, the results of functions it
+  called, and invariants it infers for loops. Then the condition is erased:
+  a refined type is its underlying type at run time.
+
+See [Refinement types](@/docs/type-system.md#refinement-types) for a guided
+introduction.
 
 ## Classes and constraints
 
