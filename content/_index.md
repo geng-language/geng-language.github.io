@@ -106,14 +106,25 @@ changes readings =
 There is no `null` here and nothing to throw. `when` must handle every kind
 of `Reading`, or the program does not compile.
 
-`changes` reads the previous temperature with `Array.getAt`, which takes an
-index the compiler can prove is inside the array, and returns the element
-itself, not a `Maybe`. Nothing in `changes` is written for the proof: the
-compiler knows that `Array.map` keeps the length, that `Array.indexedMap`
-gives `i` inside `temps`, and that the `if` makes `i - 1` at least 0. Without
-refinement types, the read would return a `Maybe`, and you would write a
-`Nothing` branch that can never run. Leave out the `if`, and the program
-does not compile: the compiler shows that with `i = 0`, the read falls
-before the start of the array.
+`Array.getAt` returns the element itself, not a `Maybe`, because the
+compiler proves the index is inside the array. `Array.indexedMap` keeps `i`
+in range, and the `if` keeps `i - 1` from going below 0. Leave out the `if`,
+and the program does not compile.
+
+Without refinements, the read returns a `Maybe`, and you handle a case that
+can never happen:
+
+```geng
+if i > 0 then
+    when Array.get (i - 1) temps is
+        Just previous ->
+            t - previous
+
+        Nothing ->
+            0.0 -- cannot happen
+
+else
+    0.0
+```
 
 Geng is not released yet. See [Status and roadmap](@/docs/status.md).
