@@ -25,7 +25,7 @@ Expect breaking changes until the first public release.
 | Native backend (C, Linux first) | Next; an early prototype has run |
 | WebAssembly (WasmGC) backend | Planned |
 | JVM backend | Planned |
-| [Refinement types](@/docs/type-system.md#refinement-types-planned) | Designed; `geng fmt` reads the syntax, the checker is not started |
+| [Refinement types](@/docs/type-system.md#refinement-types) | Built, on every target; `geng package` gives a changed refinement its semver magnitude |
 | `geng fmt` | Built |
 | `geng protobuf` | Built |
 | Package manager (git-based, no registry) | Built; nothing published yet |
@@ -67,6 +67,10 @@ documentation yet.
   Until it exists, `core` has an interim `Process.spawn`.
 - **The command-line tool.** Command names and options are reviewed before
   release.
+- **Refinement types.** Refinements cannot yet go on record fields or
+  expression annotations, a refined type alias cannot take a value as a
+  parameter, and only `Int`s and a few sizes can be refined. Each is to be
+  looked at again once real programs have used the first design.
 - **Class declarations.** Only `core` can declare classes and instances
   today. Opening this to all code is possible later.
 

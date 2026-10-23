@@ -1,13 +1,13 @@
 +++
 title = "Geng's type system"
-description = "Custom types, pattern matching and planned refinement types, for people who know Python, Go, C or C++."
+description = "Custom types, pattern matching and refinement types, for people who know Python, Go, C or C++."
 weight = 22
 +++
 
 Most of Geng's type system comes from Elm and Gren, and those languages got it
 from the ML family: records, custom types and pattern matching. If you have
 written Python, Go, C or C++, records will look familiar. Custom types will
-look partly like enums, but they can do more. Geng also plans to add
+look partly like enums, but they can do more. Geng also has
 refinement types, which none of those languages have.
 
 This page explains the ideas. For the exact rules, see
@@ -23,7 +23,7 @@ Every type in this page is a way to build a new set from old ones:
 - A **record** combines values: a `Point` is an `x` *and* a `y`.
 - A **custom type** chooses between values: a `Shape` is a circle *or* a
   rectangle.
-- A **refinement type** (planned) keeps only some values of another type: an
+- A **refinement type** keeps only some values of another type: an
   `Int` that is greater than zero.
 
 The aim is the same each time: make the type allow exactly the values that
@@ -293,16 +293,9 @@ This works, but it has costs:
 - The compiler does not know what the rule is. It knows that a `Percent` came
   from `fromInt`, not that it is at most 100.
 
-Refinement types are meant to remove these costs for rules the compiler can
-understand.
+Refinement types remove these costs for rules the compiler can understand.
 
-## Refinement types (planned)
-
-> [!NOTE]
-> Refinement types are designed but not yet checked. `geng fmt` already reads
-> and formats the syntax below. `geng make` refuses any refined type with
-> `REFINEMENTS NOT CHECKED YET`, so that nothing looks checked when it is
-> not. Details may still change before the checker is built.
+## Refinement types
 
 ### What they are
 
@@ -320,8 +313,9 @@ A value of the refined type is still an `Int` or an `Array`. There is no
 wrapper and nothing to unwrap: you can pass a positive `Int` anywhere an `Int`
 is expected. What changes is that the compiler checks, before the program runs,
 that a value really meets the condition wherever the refined type is required.
-Once checked, the condition is erased. A refined program runs exactly the same
-code as an unrefined one, with no check added at run time.
+`geng make` refuses a program where it cannot prove one. Once checked, the
+condition is erased. A refined program runs exactly the same code as an
+unrefined one, with no check added at run time, on every target.
 
 ### Writing one
 
@@ -343,7 +337,8 @@ firstOf : (a : Array x where Array.length a > 0) -> x
 ```
 
 `getAt` needs no `Maybe` and no bounds check, because a call that might read
-outside the array does not compile.
+outside the array does not compile. A name that no condition reads is an
+error, since it would look as if it meant something.
 
 A condition is deliberately small. It can contain:
 
@@ -360,9 +355,38 @@ condition outside this list is a `BAD REFINEMENT` error. The arithmetic in a
 condition is exact, because it is never run: `at + 4 <= Bytes.length b` means
 the same as `at <= Bytes.length b - 4`.
 
-In the first design, refinements go only on the arguments and result of a
-top-level or `let` signature, including callbacks. Type aliases, record
-fields and annotations on expressions cannot be refined yet.
+Refinements go on the arguments and result of a top-level or `let` signature,
+including callbacks. A `let`'s condition may also name the arguments of the
+signatures around it. Record fields and annotations on expressions cannot be
+refined yet.
+
+### Naming a refinement
+
+A type alias can name a refinement, so you write it once. `core` provides
+`Nat`, an `Int` that is never negative, and you can write your own:
+
+```geng
+-- In core's Basics:
+type alias Nat =
+    (n : Int where 0 <= n)
+
+-- Your own:
+type alias Percent =
+    (p : Int where 0 <= p && p <= 100)
+
+setVolume : Percent -> Task Never {}
+
+-- Named, so that another condition can read it, and with more added:
+getAt : (i : Nat) -> (a : Array x where i < Array.length a) -> x
+```
+
+Unlike the opaque `Percent` above, this one is a plain `Int`. `setVolume 50`
+compiles with no `Maybe`, and `setVolume 150` does not compile at all.
+
+A refined alias goes only where a signature names a value. `Array Nat`,
+`Maybe Percent` and a record field of type `Nat` are errors, because nothing
+there is checked. An alias's condition reads only its own value, so `Nat`
+cannot say "an index into this array": write that one out, as `getAt` does.
 
 ### Things that are almost refinement types
 
@@ -404,8 +428,8 @@ average total count =
 
 At each call, the compiler uses what it knows at that point:
 
-- the tests on the way to the call, such as the `if` above (`when` branches
-  work the same way);
+- the tests on the way to the call, such as the `if` above (a `when` on a
+  number works the same way);
 - the refinements on the calling function's own arguments;
 - the promises in the results of functions it has called;
 - facts it works out for itself about loops.
@@ -418,7 +442,7 @@ sum a =
     let
         go i acc =
             if i < Array.length a then
-                go (i + 1) (acc + getAt i a)
+                go (i + 1) (acc + Array.getAt i a)
 
             else
                 acc
@@ -426,11 +450,60 @@ sum a =
     go 0 0
 ```
 
-`getAt i a` needs `0 <= i` and `i < Array.length a`. The `if` gives the
+`Array.getAt i a` needs `0 <= i` and `i < Array.length a`. The `if` gives the
 second. The first comes from the loop: `go` starts at 0 and only adds 1, and
 the compiler finds that by itself. As a rule, you write refinements on the
-functions a module exposes, which are its contract, and the compiler infers
-them for private loops.
+functions a module exposes, which are their contract, and the compiler infers
+them for private loops. It does not infer them for functions that call each
+other, or a loop whose facts relate three values; those need a refinement
+written on them.
+
+The compiler follows a value chosen by an `if`, and understands `min`, `max`
+and `clamp`. It treats the same sum written twice as two values, so test a
+sum once, give it a name with `let`, and use the name.
+
+### Refinements in `core`
+
+`core` uses refinements for its own reads, and has two functions that take a
+refined index and return the element directly:
+
+```geng
+Array.getAt : (i : Int where 0 <= i && i < Array.length array) -> (array : Array a) -> a
+Bytes.getAt : (index : Int where 0 <= index && index < Bytes.length bytes) -> (bytes : Bytes) -> UInt8
+```
+
+Use them where a test you write anyway keeps the index in range, as a loop
+does. Elsewhere, `Array.get` and `Bytes.get` still return `Maybe`. Note that
+`Array.getAt` does not count a negative index from the end, as `Array.get`
+does.
+
+Other functions in `Array` promise something about what they return, so a
+read after them can be proved without any test:
+
+- `map`, `indexedMap`, `reverse` and `set` return an array of the same length;
+- `pushFirst` and `pushLast` return one that is one longer;
+- `prepend` and `append` return one as long as both together;
+- `indexedMap`, `indexedFoldl` and `indexedFoldr` give their function an index
+  inside the array.
+
+So this compiles, with no `Maybe` and no test:
+
+```geng
+mirrored : Array Int -> Array Int
+mirrored a =
+    let
+        back =
+            Array.reverse a
+    in
+    Array.indexedMap (\i x -> x * 100 + Array.getAt i back) a
+```
+
+A function that promises something asks nothing of its caller, so a program
+that calls only `Array.map` and the like builds exactly as it would without
+refinements. A function that asks something of its arguments, as `getAt`
+does, cannot be passed around as a value, because the compiler could not see
+its calls. Pass a lambda that calls it instead:
+`Array.indexedMap (\i _ -> Array.getAt i b) a`.
 
 ### Overflow is checked too
 
@@ -449,71 +522,84 @@ a form that cannot wrap:
 | `offset + n <= length` | `n <= length - offset` |
 | `(lo + hi) // 2` | `lo + (hi - lo) // 2` |
 
-Geng's own code had exactly this bug in its byte decoder. Designing
-refinement types is what found it.
+Geng's own code had exactly this bug in its byte decoder, and four sums in
+`core`'s sort wrapped past 2^30 elements. Refinement types found all of them,
+and they are fixed.
 
 ### When a refinement does not hold
 
 An error says what was required, points at the call, lists each fact the
 compiler had and where it came from, and gives values that break the
 condition. When there is a rewrite the compiler can prove means the same, it
-suggests it. For example, for a loop that counts down:
+suggests it. This one reads the previous element of an array, but forgets to
+check that there is one:
+
+```geng
+changes : Array Float -> Array Float
+changes temps =
+    Array.indexedMap (\i t -> t - Array.getAt (i - 1) temps) temps
+```
 
 ```text
--- CANNOT SHOW A REFINEMENT ---------------------------------- src/Compare.geng
+-- CANNOT SHOW A REFINEMENT -------------------------------------- src/Main.geng
 
-`getAt` reads inside the array it is given, and here I cannot show
-`0 <= level`:
+`getAt` requires this of its argument `i`:
 
-52|     Array.getAt level levels
-                    ^^^^^
+    0 <= i && i < Array.length array
+
+and I cannot show it here:
+
+8|     Array.indexedMap (\i t -> t - Array.getAt (i - 1) temps) temps
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here, with this call's values for its names, that is:
+
+    0 <= i - 1 && i - 1 < Array.length temps
+
 What I know here:
 
-    level < Array.length levels   inferred for the loop `compareLevels`
+    0 <= i && i < Array.length temps
+        from the refinement on `indexedMap`'s callback's `i`
 
-and nothing about `level` from below: the loop calls itself with `level - 1`,
-and with `Array.length levels = 0` and `level = -1` it reads before the
-start.
+With `Array.length temps = 1` and `i = 0`, it is False.
 ```
+
+Testing `i > 0` before the read makes it compile.
 
 ### In a package
 
 A refinement on an exposed function is part of its type, so changing one is a
-semver change. The package tool works out how big a change it is: asking for
-less of an argument, or promising more in a result, is a minor change; asking
-for more, or promising less, is a major one. Rewriting a condition so it means
-the same thing is a patch.
+semver change. `geng package diff`, `bump` and `validate` work out how big a
+change it is: asking for less of an argument, or promising more in a result,
+is a minor change; asking for more, or promising less, is a major one.
+Rewriting a condition so it means the same thing is a patch.
 
-### What this could mean for Geng
+A package is held to its own refinements: `geng make` in the package and
+`geng package validate` refuse it when a condition is not proved. An
+application also checks every package it uses on every build, so a newer
+compiler, or a different version of a dependency, can never leave a package's
+refinements unchecked.
 
-Some places where Geng today either returns a `Maybe` or picks a safe default
-are places where a refinement type could state the rule instead:
+### What it costs
 
-- **Array and byte indexes.** `Array.get` returns a `Maybe` because the index
-  might be out of range. `getAt` above takes an index the compiler knows is in
-  range, and returns the element directly.
-- **Non-empty arrays.** `Array.first` returns a `Maybe`. For an array known to
-  be non-empty, it would not need to.
-- **Division.** Geng defines `x // 0` as `0` so that arithmetic never crashes.
-  A function that requires a non-zero divisor can say so in its type.
-- **Number ranges.** Converting an `Int` to a `UInt8` saturates today. A value
-  known to be between 0 and 255 could convert without any loss.
-
-A survey of the code Geng builds found about 350 `Nothing` and `Err` branches
-written only because a read might fail. The first design removes 122 of them.
-These are examples of what refinement types can express, not a list of
-planned API changes.
+Nothing at run time. At compile time, a program with no refinements, or one
+that only calls functions like `Array.map` that promise something, builds
+exactly as before. One that calls `getAt` or writes its own refinements takes
+a little longer: a small program calling `Array.getAt` builds warm in 0.30
+to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
 
 ### What they will not do
 
 - **Conditions are limited.** Comparisons, arithmetic and sizes are all a
   condition can talk about. It cannot decide whether a string is a valid email
-  address. Opaque types stay the right tool for rules like that, and for
-  ranges you want to name once, since type aliases cannot be refined yet.
+  address, or whether a key is in a `Dict`. Opaque types stay the right tool
+  for rules like that.
 - **Run-time checks do not go away.** Data from a file, the network or the user
   is not known in advance. You check it once, with an `if` or a `when`, and
   from then on the compiler carries the result. That is the same "parse, don't
   validate" approach as today, with less wrapping.
+- **A `Maybe` hides what was checked.** The value inside a `Maybe` cannot be
+  refined, so a helper that returns `Maybe Int` loses what it tested.
 - **The compiler may give up.** When a call needs more cases than the checker
   tries, it says so rather than guessing. A test just before the call, or a
   small function with the condition as a refinement, makes it decidable.
@@ -534,7 +620,7 @@ planned API changes.
 | exceptions, `(value, err)` | `Result` |
 | generics, templates | type parameters |
 | validated wrapper class | opaque type |
-| range types, assertions, validators | refinement types (planned) |
+| range types, assertions, validators | refinement types |
 
 ## Where to go next
 

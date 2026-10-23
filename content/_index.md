@@ -25,10 +25,10 @@ That should not take a specialist. Richer type systems and formal
 verification tools can prove more, but they ask more of the programmer than
 most projects can afford. Geng comes from Gren and Elm, which keep the
 language small, so programs stay **simple** to read and write.
-[Refinement types](@/docs/type-system.md#refinement-types-planned), designed
-but not yet built, will let the compiler check rules about values too, such
-as "this index is inside the array", in the same plain style. The compiler
-proves them before the program runs, so they cost nothing at run time.
+[Refinement types](@/docs/type-system.md#refinement-types) let the compiler
+check rules about values too, such as "this index is inside the array", in
+the same plain style. The compiler proves them before the program runs, so
+they cost nothing at run time.
 
 ### Reliable everywhere
 
@@ -85,27 +85,35 @@ toCelsius reading =
         Fahrenheit f ->
             (f - 32.0) * 5.0 / 9.0
 
-latest : (readings : Array Reading where Array.length readings > 0) -> Reading
-latest readings =
-    Array.getAt (Array.length readings - 1) readings
+-- How much each reading changed since the one before it.
+changes : Array Reading -> Array Float
+changes readings =
+    let
+        temps =
+            Array.map toCelsius readings
+    in
+    Array.indexedMap
+        (\i t ->
+            if i > 0 then
+                t - Array.getAt (i - 1) temps
 
-describe : Array Reading -> String
-describe readings =
-    if Array.length readings > 0 then
-        "Latest reading: " ++ String.fromFloat (toCelsius (latest readings)) ++ "°C"
-
-    else
-        "No readings yet"
+            else
+                0.0
+        )
+        temps
 ```
 
 There is no `null` here and nothing to throw. `when` must handle every kind
 of `Reading`, or the program does not compile.
 
-`latest` uses a planned refinement type: `where` says the array is never
-empty. `Array.getAt` needs an index inside the array, and the refinement
-proves that `Array.length readings - 1` is one, so there is no `Maybe` to
-unwrap and no bounds check at run time. In `describe`, the `if` gives the
-compiler that fact. Call `latest` without it, and the program does not
-compile.
+`changes` reads the previous temperature with `Array.getAt`, which takes an
+index the compiler can prove is inside the array, and returns the element
+itself, not a `Maybe`. Nothing in `changes` is written for the proof: the
+compiler knows that `Array.map` keeps the length, that `Array.indexedMap`
+gives `i` inside `temps`, and that the `if` makes `i - 1` at least 0. Without
+refinement types, the read would return a `Maybe`, and you would write a
+`Nothing` branch that can never run. Leave out the `if`, and the program
+does not compile: the compiler shows that with `i = 0`, the read falls
+before the start of the array.
 
 Geng is not released yet. See [Status and roadmap](@/docs/status.md).
