@@ -106,10 +106,17 @@ changes readings =
 There is no `null` here and nothing to throw. `when` must handle every kind
 of `Reading`, or the program does not compile.
 
-`Array.getAt` returns the element itself, not a `Maybe`, because the
-compiler proves the index is inside the array. `Array.indexedMap` keeps `i`
-in range, and the `if` keeps `i - 1` from going below 0. Leave out the `if`,
-and the program does not compile.
+`Array.getAt` comes from `core`, and its type says what it needs:
+
+```geng
+getAt : (i : Int where 0 <= i && i < Array.length array) -> (array : Array a) -> a
+```
+
+The `where` is a refinement: `i` must be inside `array`. `getAt` returns the
+element itself, not a `Maybe`, because the compiler proves that at each
+call. In `changes`, `Array.indexedMap` keeps `i` in range, and the `if`
+keeps `i - 1` from going below 0. Leave out the `if`, and the program does
+not compile.
 
 Without refinements, the read returns a `Maybe`, and you handle a case that
 can never happen:
