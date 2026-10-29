@@ -29,6 +29,14 @@ Or run `devbox shell` and use `zola` directly. When upgrading Zola, update both
 
 Pages in `docs/` and `reference/` are ordered by the `weight` front-matter field.
 
+## Logo font
+
+The header wordmark and the favicon are drawn from the Feelfree font by Billy
+Argel. It is free for personal use only; a commercial license is sold at
+<https://billyargel.com/product/feelfree/>. Only the glyph outlines are in the
+repo (`templates/partials/wordmark.html`, `static/logos/favicon.svg`), not the
+font file.
+
 ## Deployment
 
 Pushes to `main` are built and deployed by `.github/workflows/deploy.yml`.
