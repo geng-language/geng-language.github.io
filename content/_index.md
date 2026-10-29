@@ -30,6 +30,45 @@ check rules about values too, such as "this index is inside the array", in
 the same plain style. The compiler proves them before the program runs, so
 they cost nothing at run time.
 
+Here is what that looks like:
+
+```geng
+type Reading
+    = Celsius Float
+    | Fahrenheit Float
+
+toCelsius : Reading -> Float
+toCelsius reading =
+    when reading is
+        Celsius c ->
+            c
+
+        Fahrenheit f ->
+            (f - 32.0) * 5.0 / 9.0
+
+-- The newest reading. The type says there is always at least one.
+latest : (readings : Array Reading where Array.length readings > 0) -> Float
+latest readings =
+    toCelsius (Array.getAt (Array.length readings - 1) readings)
+
+report : Array Reading -> String
+report readings =
+    if Array.length readings > 0 then
+        "Now " ++ String.fromFloat (latest readings) ++ "°C"
+
+    else
+        "No readings yet"
+```
+
+There is no `null` here and nothing to throw. `when` must handle every kind
+of `Reading`, or the program does not compile.
+
+The `where` in `latest`'s type is a refinement: `readings` cannot be empty.
+So `latest` reads the last element directly, with no `Maybe` and no check
+for a case that cannot happen. The check is in `report`, where it belongs,
+and the compiler sees it. Leave out the `if`, and the program does not
+compile.
+
 ### Reliable everywhere
 
 The same Geng program runs where you need it:
@@ -68,70 +107,5 @@ No platform is the main one with the others as ports. Every backend is
 tested against the same conformance suite, and numbers, strings and equality
 behave the same on all of them. Geng will always support every one of these
 platforms. See [Platforms and targets](@/docs/platforms.md).
-
-## A taste of Geng
-
-```geng
-type Reading
-    = Celsius Float
-    | Fahrenheit Float
-
-toCelsius : Reading -> Float
-toCelsius reading =
-    when reading is
-        Celsius c ->
-            c
-
-        Fahrenheit f ->
-            (f - 32.0) * 5.0 / 9.0
-
--- How much each reading changed since the one before it.
-changes : Array Reading -> Array Float
-changes readings =
-    let
-        temps =
-            Array.map toCelsius readings
-    in
-    Array.indexedMap
-        (\i t ->
-            if i > 0 then
-                t - Array.getAt (i - 1) temps
-
-            else
-                0.0
-        )
-        temps
-```
-
-There is no `null` here and nothing to throw. `when` must handle every kind
-of `Reading`, or the program does not compile.
-
-`Array.getAt` comes from `core`, and its type says what it needs:
-
-```geng
-getAt : (i : Int where 0 <= i && i < Array.length array) -> (array : Array a) -> a
-```
-
-The `where` is a refinement: `i` must be inside `array`. `getAt` returns the
-element itself, not a `Maybe`, because the compiler proves that at each
-call. In `changes`, `Array.indexedMap` keeps `i` in range, and the `if`
-keeps `i - 1` from going below 0. Leave out the `if`, and the program does
-not compile.
-
-Without refinements, the read returns a `Maybe`, and you handle a case that
-can never happen:
-
-```geng
-if i > 0 then
-    when Array.get (i - 1) temps is
-        Just previous ->
-            t - previous
-
-        Nothing ->
-            0.0 -- cannot happen
-
-else
-    0.0
-```
 
 Geng is not released yet. See [Status and roadmap](@/docs/status.md).
