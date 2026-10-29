@@ -178,6 +178,38 @@ getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 See [Refinement types](@/docs/type-system.md#refinement-types) for a guided
 introduction.
 
+## Affine types
+
+A value of an affine type can be used once. `Array.Builder` is affine, and
+so is any type that holds one.
+
+- A *use* is a write, storing the value, returning it, or passing it to a
+  function that takes it: at most once on each path through the code.
+  Before that, the value may be looked at (its length, an element) any
+  number of times.
+- A record is affine when one of its fields is. A custom type that holds a
+  builder is declared `@affine`. `@affine` on a type alias is an error, and
+  an `@affine` type cannot also have `@derive(…)`.
+- A function's affine argument is only looked at unless it is marked
+  `moved`: `(moved b : Builder a)`. `moved` goes on the arguments of a
+  top-level or `let` signature, not on the result or a callback's argument.
+  On a type that is not affine, including a type variable, it is an error.
+- A function with a signature is held to its `moved` marks. One without a
+  signature has them worked out from its body.
+- Moving one affine field of a record takes only that field; the plain
+  fields may still be read. A record's fields, and a `let`'s bindings, are
+  evaluated in the order they are written.
+- Reading a builder inside a function that a fold runs, and reading an
+  element without taking it out, are borrows, and allowed. A function given
+  to `Task.andThen`, `Task.onError` or `Task.map` may take a builder it
+  captures.
+- Generic code that keeps a value twice cannot be given an affine one.
+- None of borrowing, keeping a callback or keeping a value twice is
+  written. The compiler works them out, and `geng docs` lists them.
+
+See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
+introduction.
+
 ## Classes and constraints
 
 A constraint says that a type variable must support some operations:

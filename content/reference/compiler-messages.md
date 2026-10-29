@@ -31,6 +31,10 @@ weight = 60
     `ARITHMETIC MAY WRAP`). The proving errors list each fact the compiler
     had and values that break the condition; see
     [When a refinement does not hold](@/docs/type-system.md#when-a-refinement-does-not-hold).
+  - Ownership (`OWNERSHIP`): an affine value, such as an `Array.Builder`,
+    used twice. The message points at both uses and says what to write
+    instead; see
+    [When it is refused](@/docs/type-system.md#when-it-is-refused).
   - Capabilities (`CAPABILITY IN A DEPENDENCY`).
   - Refused Gren constructs (`port module`, `effect module`).
   - Packages (dependency conflicts, invalid project file, `CORE IS NOT A DEPENDENCY`).

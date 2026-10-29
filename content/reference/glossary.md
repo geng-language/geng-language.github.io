@@ -10,12 +10,15 @@ weight = 90
 
 ## Terms
 
+- Affine type (a value used once, such as `Array.Builder`)
 - Algebraic data type
 - Annotation
 - Arity
 - Associativity
 - Attribute (`@derive`, `@extern`, ...)
 - Backend / target
+- Borrow
+- Builder
 - BEAM
 - Capability
 - Class

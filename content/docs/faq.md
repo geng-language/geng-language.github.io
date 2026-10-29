@@ -44,6 +44,11 @@ process or thread without a lock or a copy. On the BEAM this is how the
 runtime already works; on other platforms it removes data races by
 construction.
 
+When building a large array, an `Array.Builder` writes into one buffer in
+place, but nothing can see that happen: the compiler checks that a builder
+is used only once, so no one else holds it. See
+[Builders](@/docs/type-system.md#builders-values-used-once).
+
 ### Why no exceptions?
 
 An exception is control flow that does not appear in any type. In Geng, a

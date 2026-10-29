@@ -1,6 +1,6 @@
 +++
 title = "Geng's type system"
-description = "Custom types, pattern matching and refinement types, for people who know Python, Go, C or C++."
+description = "Custom types, pattern matching, refinement types and builders, for people who know Python, Go, C or C++."
 weight = 22
 +++
 
@@ -8,7 +8,8 @@ Most of Geng's type system comes from Elm and Gren, and those languages got it
 from the ML family: records, custom types and pattern matching. If you have
 written Python, Go, C or C++, records will look familiar. Custom types will
 look partly like enums, but they can do more. Geng also has
-refinement types, which none of those languages have.
+refinement types, which none of those languages have, and builders, which
+are written in place but checked by the compiler so they stay safe.
 
 This page explains the ideas. For the exact rules, see
 [Types](@/reference/types.md).
@@ -606,6 +607,151 @@ to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
 - **They are optional.** Code that never uses a refinement type is ordinary
   Geng.
 
+## Builders: values used once
+
+Geng's values never change, so adding to an `Array` gives you a new array.
+Building a large array one element at a time is faster with an
+`Array.Builder`, which writes into one buffer in place, like a Go slice you
+`append` to or a C++ `std::vector`. From the outside it still looks like any
+other value: each write returns the builder to use next.
+
+```geng
+import Array.Builder as Builder exposing (Builder)
+
+squares : Int -> Array Int
+squares n =
+    Array.range 0 (n - 1)
+        |> Array.foldl (\i acc -> Builder.pushLast (i * i) acc) (Builder.empty n)
+        |> Builder.toArray
+```
+
+For that to be safe, nothing may hold on to a builder after it has been
+written to. So a builder is **affine**: it can be *used* once. A use is a
+write, storing it, returning it, or passing it to a function that takes it.
+Before that, it can be *looked at* as often as you like, for its length or
+an element.
+
+Most code already uses builders this way, and needs nothing written for it.
+The compiler checks every build: each write goes to the builder the previous
+step returned, or the program does not compile.
+
+### What you write
+
+- **`moved`** marks a function argument that the function uses up, so the
+  caller knows it cannot use that builder again. An argument without it is
+  only looked at. The word goes where a refinement's name goes:
+
+  ```geng
+  addLines : Array Line -> (moved b : Builder Line) -> Builder Line
+  addLines lines b =
+      Array.foldl Builder.pushLast b lines
+
+
+  lineCount : Builder Line -> Int
+  lineCount b =
+      Builder.length b
+  ```
+
+  A function with a signature is held to it: forgetting `moved` on an
+  argument it writes, or writing `moved` on one it only looks at, is an
+  error at that function. A function without a signature has this worked
+  out from its body. `moved` on a type that is not affine is an error. Note
+  that this is the opposite of Rust, where an unmarked argument is moved and
+  a borrow is marked with `&`.
+
+- **`@affine`** goes on a custom type that holds a builder. A record that
+  holds one is affine already, with no mark:
+
+  ```geng
+  @affine
+  type Document
+      = Document { title : String, body : Builder Line }
+  ```
+
+That is all. Everything else, such as `Array`, `Dict`, `String` and records
+of them, is shared freely as before. Geng still writes those in place when
+it can prove no one else holds them, but that is an optimization, not a
+rule you have to follow.
+
+### What the compiler works out for itself
+
+Some code looks like it uses a builder twice, but only looks at it. The
+compiler allows these **borrows**, and nothing about them is written:
+
+- reading a builder inside a function that a fold runs many times;
+- reading an element of a builder of builders without taking it out;
+- a function given to `Task.andThen` taking a builder it captured, since a
+  task runs that function at most once.
+
+Whether a function keeps the callback you give it, and whether its result
+is a borrow of an argument, are worked out from its body too.
+
+### When it is refused
+
+A refused program gets an `OWNERSHIP` error that points at where the value
+was used up and where it was used again, and says what to write instead.
+This one computes `withDefault`'s argument before calling it, so both pushes
+happen, from the same builder:
+
+```geng
+step : Maybe Int -> Builder Int -> Builder Int
+step m acc =
+    m
+        |> Maybe.map (\x -> Builder.pushLast x acc)
+        |> Maybe.withDefault (Builder.pushLast 0 acc)
+```
+
+```text
+-- OWNERSHIP ----------------------------------------------------- src/Main.geng
+
+`acc` is a Builder, which is written in place, so it can be used once. Here a
+function captures it, and it is used again:
+
+4|         |> Maybe.map (\x -> Builder.pushLast x acc)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+5|         |> Maybe.withDefault (Builder.pushLast 0 acc)
+                                                    ^^^
+
+A function takes what it captures when it is made, whether or not it is ever
+called.
+
+Hint: hand it to the function as an argument where the function is called.
+```
+
+A `when` with one push in each branch compiles. Other common fixes:
+
+| Refused | Instead |
+|---|---|
+| two writes from the same builder: `{ a = Builder.pushLast 1 b, c = Builder.pushLast 2 b }` | write one after the other, or copy first with `Builder.copy` |
+| a `let` that writes the builder, used in only one branch of an `if` | move the `let` into that branch |
+| one builder defined at the top level and used in many places | make a new one at each use |
+| `Array.sortWith` or `Array.remove` on an `Array (Builder Int)` | keep the rows in a `Builder`, and move them with `Builder.rotate` |
+| `get` a row of a builder of builders, change it, and `set` it back | `Builder.update`, which hands the row to your function and puts back what it returns |
+
+### In a package
+
+What a function does with its arguments is part of its interface, whether
+you wrote it (`moved`, `@affine`) or the compiler worked it out. `geng docs`
+lists these facts for each exposed function, and `geng package diff`
+compares them between versions. Each one limits what a caller may do, so
+gaining one is a major change and losing one is minor.
+
+### What it costs
+
+Nothing for code that does not use builders. For code that does, the check
+is what makes them reliably fast. Without it, a builder that was
+accidentally kept around would still give the right answer, but would
+quietly copy itself on every write. With it, that code does not compile.
+And since every program is checked, a write can be a plain store into the
+buffer, with no bookkeeping: up to twice as fast on Geng's own terminal
+renderer. (Today builders still keep that bookkeeping; dropping it is
+next.)
+
+On JavaScript, and natively, a builder is a buffer written in place. On the
+BEAM it is a persistent tree, as before. The rules are the same everywhere:
+a program refused on one target is refused on all of them.
+
 ## Summary
 
 | You know | In Geng |
@@ -621,6 +767,7 @@ to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
 | generics, templates | type parameters |
 | validated wrapper class | opaque type |
 | range types, assertions, validators | refinement types |
+| a slice or vector you append to, `StringBuilder` | `Array.Builder`, used once |
 
 ## Where to go next
 

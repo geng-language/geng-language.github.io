@@ -26,6 +26,7 @@ Expect breaking changes until the first public release.
 | WebAssembly (WasmGC) backend | Planned |
 | JVM backend | Planned |
 | [Refinement types](@/docs/type-system.md#refinement-types) | Built, on every target; `geng package` gives a changed refinement its semver magnitude |
+| [Affine builders](@/docs/type-system.md#builders-values-used-once) | Built: checked on every build and every target; `geng docs` and `geng package` report what each function does with its arguments |
 | `geng fmt` | Built |
 | `geng protobuf` | Built |
 | Package manager (git-based, no registry) | Built; nothing published yet |
@@ -71,6 +72,12 @@ documentation yet.
   expression annotations, a refined type alias cannot take a value as a
   parameter, and only `Int`s and a few sizes can be refined. Each is to be
   looked at again once real programs have used the first design.
+- **Affine types.** On JavaScript and native code, a builder that the
+  checker has passed still keeps a record of what each write replaced;
+  dropping it, which the check allows, is next. `Builder.length` cannot yet
+  be read in a refinement outside `core`, an `@affine` type cannot have
+  `@derive(…)`, and whether `Array.map` should hand each builder on instead
+  of lending it is still open.
 - **Class declarations.** Only `core` can declare classes and instances
   today. Opening this to all code is possible later.
 

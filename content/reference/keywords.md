@@ -18,6 +18,7 @@ weight = 20
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
 | `where` (in a type) | a [refinement](@/docs/type-system.md#refinement-types): `(n : Int where n > 0)` |
+| `moved` (in a type) | an argument the function [uses up](@/docs/type-system.md#builders-values-used-once): `(moved b : Builder a)` |
 
 Attributes start with `@` and come before a declaration:
 
@@ -27,6 +28,7 @@ Attributes start with `@` and come before a declaration:
 | `@extern(...)` | declaring a function implemented in the host language |
 | `@externPure(...)` | the same, for a function with no effects |
 | `@capability` | marking a value only the application may use |
+| `@affine` | marking a custom type that holds a builder, so it is used once |
 
 ## Modules
 
@@ -202,6 +204,20 @@ nowWith : (Int64 -> posix) -> Task x posix
 may use. A dependency that tries to use it gets a compile error, so a library
 can only touch the file system or the network if the application hands it a
 permission.
+
+`@affine` marks a custom type that holds an `Array.Builder`, so its values
+are [used once](@/reference/types.md#affine-types). A record that holds one
+needs no mark.
+
+```geng
+@affine
+type Document
+    = Document { title : String, body : Builder Line }
+```
+
+`moved` is not an attribute but a word before an argument's name in a
+signature, `(moved b : Builder a)`. It is only special there, so `moved` can
+still be used as an ordinary name.
 
 ## Words that are no longer keywords
 

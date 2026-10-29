@@ -27,6 +27,7 @@ weight = 25
 ## Data
 
 - Arrays / lists / slices / vectors → `Array`.
+- Appending to a list in a loop, `append` to a slice, `push_back`, `StringBuilder` → `Array.Builder`, written in place and used once.
 - Dicts / maps → `Dict`.
 - Sets → `Set`.
 - Structs / classes → records (no methods, no inheritance).
