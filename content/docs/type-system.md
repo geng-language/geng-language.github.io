@@ -610,10 +610,10 @@ to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
 ## Builders: values used once
 
 Geng's values never change, so adding to an `Array` gives you a new array.
-Building a large array one element at a time is faster with an
-`Array.Builder`, which writes into one buffer in place, like a Go slice you
-`append` to or a C++ `std::vector`. From the outside it still looks like any
-other value: each write returns the builder to use next.
+That is simple and safe, but building a large array one element at a time
+would copy it over and over. An `Array.Builder` avoids that: it writes into
+one buffer in place, like a Go slice you `append` to or a C++ `std::vector`
+you `push_back` to.
 
 ```geng
 import Array.Builder as Builder exposing (Builder)
@@ -625,21 +625,82 @@ squares n =
         |> Builder.toArray
 ```
 
-For that to be safe, nothing may hold on to a builder after it has been
-written to. So a builder is **affine**: it can be *used* once. A use is a
-write, storing it, returning it, or passing it to a function that takes it.
-Before that, it can be *looked at* as often as you like, for its length or
-an element.
+### The catch
 
-Most code already uses builders this way, and needs nothing written for it.
-The compiler checks every build: each write goes to the builder the previous
-step returned, or the program does not compile.
+Writing in place is only safe if nobody is still holding the old builder.
+Go shows what goes wrong when someone is:
+
+```go
+a := make([]int, 0, 10)
+b := append(a, 1)
+c := append(a, 2) // writes into the same buffer as b
+fmt.Println(b[0]) // prints 2, not 1
+```
+
+`b` and `c` share a buffer, so writing `c` changed `b`. Go compiles this
+without a word. Geng refuses to compile the same thing, by making a builder
+**affine**: it can be *used* only once.
+
+If you know C++, a builder is like a `std::unique_ptr`. Once you hand it on,
+the old name is dead. The difference is that C++ still lets you touch a
+moved-from object, and Geng does not.
+
+### Looking and using
+
+Think of a builder's name as a ticket you can spend once. Until you spend it,
+you may *look* at the builder as often as you like.
+
+- **Looking** is asking it something: `Builder.length b`, `Builder.get i b`,
+  `Builder.slice from to b`, or passing it to a function that only looks.
+- **Using** is spending it: writing to it (`Builder.pushLast x b`), finishing
+  it (`Builder.toArray b`), storing it in a record, returning it, or passing it
+  to a function that takes it.
+
+A write gives back a builder, and that is the new ticket. So instead of
+calling `v.push_back(x)` on the same `v` each time, you pass along what the
+last write gave back:
+
+```geng
+let
+    b0 = Builder.empty 3
+    b1 = Builder.pushLast 1 b0
+    b2 = Builder.pushLast 4 b1
+    b3 = Builder.pushLast 9 b2
+in
+Builder.toArray b3
+```
+
+In practice you rarely name each step. A fold or a pipeline passes the builder
+along for you, as `squares` does above, and most code already follows the
+rule without trying.
+
+### Compiles, and does not
+
+| Refused | Compiles |
+|---|---|
+| `left = Builder.pushLast 2 b0`<br>`right = Builder.pushLast 3 b0`<br>Two writes to one builder: Go's `append` bug. | `left = Builder.pushLast 2 (Builder.copy b0)`<br>`right = Builder.pushLast 3 b0`<br>`Builder.copy` only looks at `b0`, and makes a second builder with its own buffer. |
+| `arr = Builder.toArray b`<br>`n = Builder.length b`<br>`toArray` spent `b`, so it cannot be read after. | `n = Builder.length b`<br>`arr = Builder.toArray b`<br>Look first, then use. |
+| `{ first = b, second = b }`<br>Two places would share one buffer. | `{ first = Builder.copy b, second = b }`<br>Copy first: fields are evaluated in order, and `b` cannot be read once it is stored. |
+
+"Once" means once on each path the program can take, so one use in each
+branch of an `if` or a `when` is fine:
+
+```geng
+if Builder.length b == 0 then
+    Builder.toArray (Builder.pushLast 1 b)
+
+else
+    Builder.toArray b
+```
 
 ### What you write
 
-- **`moved`** marks a function argument that the function uses up, so the
-  caller knows it cannot use that builder again. An argument without it is
-  only looked at. The word goes where a refinement's name goes:
+Almost nothing. There are two marks, and both are about saying what a
+function or a type does with a builder.
+
+- **`moved`** marks a function argument that the function uses up. Without
+  it, the function may only look at the argument, and the caller can keep
+  using the builder afterwards. With it, the caller cannot:
 
   ```geng
   addLines : Array Line -> (moved b : Builder Line) -> Builder Line
@@ -652,15 +713,15 @@ step returned, or the program does not compile.
       Builder.length b
   ```
 
-  A function with a signature is held to it: forgetting `moved` on an
-  argument it writes, or writing `moved` on one it only looks at, is an
-  error at that function. A function without a signature has this worked
-  out from its body. `moved` on a type that is not affine is an error. Note
-  that this is the opposite of Rust, where an unmarked argument is moved and
-  a borrow is marked with `&`.
+  In C++ terms, a plain argument is a `const Builder&` and a `moved` one is a
+  `Builder&&`. The signature has to be honest: leaving `moved` off `addLines`
+  is an error, and so is putting it on `lineCount`. A function without a
+  signature has this worked out from its body. If you know Rust, note that
+  this is the opposite way round: there an unmarked argument is moved, and a
+  borrow is marked with `&`.
 
-- **`@affine`** goes on a custom type that holds a builder. A record that
-  holds one is affine already, with no mark:
+- **`@affine`** goes on a custom type that holds a builder, so readers can see
+  that its values are used once too. A record that holds one needs no mark:
 
   ```geng
   @affine
@@ -668,38 +729,45 @@ step returned, or the program does not compile.
       = Document { title : String, body : Builder Line }
   ```
 
-That is all. Everything else, such as `Array`, `Dict`, `String` and records
-of them, is shared freely as before. Geng still writes those in place when
-it can prove no one else holds them, but that is an optimization, not a
-rule you have to follow.
+Everything else, such as `Array`, `Dict`, `String` and records of them, is
+shared freely as before. Geng still writes those in place when it can prove
+no one else holds them, but that is an optimization, not a rule you have to
+follow.
 
 ### What the compiler works out for itself
 
-Some code looks like it uses a builder twice, but only looks at it. The
-compiler allows these **borrows**, and nothing about them is written:
+Some code looks like it uses a builder many times, but only looks at it. That
+is allowed, and nothing about it is written. Here the fold's function runs
+once per index, but each time it only reads `b`:
 
-- reading a builder inside a function that a fold runs many times;
-- reading an element of a builder of builders without taking it out;
-- a function given to `Task.andThen` taking a builder it captured, since a
-  task runs that function at most once.
+```geng
+total : Array Int -> Builder Int -> Int
+total indexes b =
+    Array.foldl (\i sum -> sum + Maybe.withDefault 0 (Builder.get i b)) 0 indexes
+```
 
-Whether a function keeps the callback you give it, and whether its result
-is a borrow of an argument, are worked out from its body too.
+The same goes for reading an element of a builder of builders without taking
+it out, and for a function given to `Task.andThen` that uses a builder it
+captured, since a task runs that function at most once. Whether a function
+keeps the callback you give it, and whether its result is a borrow of an
+argument, are worked out from its body too.
 
 ### When it is refused
 
-A refused program gets an `OWNERSHIP` error that points at where the value
-was used up and where it was used again, and says what to write instead.
-This one computes `withDefault`'s argument before calling it, so both pushes
-happen, from the same builder:
+A refused program gets an `OWNERSHIP` error that points at both places and
+says what to write instead. This one is easy to write by accident:
 
 ```geng
-step : Maybe Int -> Builder Int -> Builder Int
+step : Maybe Int -> (moved acc : Builder Int) -> Builder Int
 step m acc =
     m
         |> Maybe.map (\x -> Builder.pushLast x acc)
         |> Maybe.withDefault (Builder.pushLast 0 acc)
 ```
+
+It reads as "push `x`, or else push 0", but Geng computes
+`withDefault`'s argument before calling it, so both pushes happen, to the same
+builder:
 
 ```text
 -- OWNERSHIP ----------------------------------------------------- src/Main.geng
@@ -719,15 +787,29 @@ called.
 Hint: hand it to the function as an argument where the function is called.
 ```
 
-A `when` with one push in each branch compiles. Other common fixes:
+A `when` runs only one branch, so it has one push on each path, and compiles:
+
+```geng
+step : Maybe Int -> (moved acc : Builder Int) -> Builder Int
+step m acc =
+    when m is
+        Just x ->
+            Builder.pushLast x acc
+
+        Nothing ->
+            Builder.pushLast 0 acc
+```
+
+Other common fixes:
 
 | Refused | Instead |
 |---|---|
-| two writes from the same builder: `{ a = Builder.pushLast 1 b, c = Builder.pushLast 2 b }` | write one after the other, or copy first with `Builder.copy` |
 | a `let` that writes the builder, used in only one branch of an `if` | move the `let` into that branch |
 | one builder defined at the top level and used in many places | make a new one at each use |
 | `Array.sortWith` or `Array.remove` on an `Array (Builder Int)` | keep the rows in a `Builder`, and move them with `Builder.rotate` |
 | `get` a row of a builder of builders, change it, and `set` it back | `Builder.update`, which hands the row to your function and puts back what it returns |
+
+The full rules are in [Affine types](@/reference/types.md#affine-types).
 
 ### In a package
 
