@@ -180,32 +180,184 @@ introduction.
 
 ## Affine types
 
-A value of an affine type can be used once. `Array.Builder` is affine, and
-so is any type that holds one.
+An affine value can be *used* only once. Today that means one type,
+`Array.Builder`, and any type that holds one. Nothing else in Geng is affine:
+`Array`, `String`, `Dict`, records of them and so on are shared freely.
 
-- A *use* is a write, storing the value, returning it, or passing it to a
-  function that takes it: at most once on each path through the code.
-  Before that, the value may be looked at (its length, an element) any
-  number of times.
-- A record is affine when one of its fields is. A custom type that holds a
-  builder is declared `@affine`. `@affine` on a type alias is an error, and
-  an `@affine` type cannot also have `@derive(…)`.
-- A function's affine argument is only looked at unless it is marked
-  `moved`: `(moved b : Builder a)`. `moved` goes on the arguments of a
-  top-level or `let` signature, not on the result or a callback's argument.
-  On a type that is not affine, including a type variable, it is an error.
-- A function with a signature is held to its `moved` marks. One without a
-  signature has them worked out from its body.
-- Moving one affine field of a record takes only that field; the plain
-  fields may still be read. A record's fields, and a `let`'s bindings, are
-  evaluated in the order they are written.
-- Reading a builder inside a function that a fold runs, and reading an
-  element without taking it out, are borrows, and allowed. A function given
-  to `Task.andThen`, `Task.onError` or `Task.map` may take a builder it
-  captures.
-- Generic code that keeps a value twice cannot be given an affine one.
-- None of borrowing, keeping a callback or keeping a value twice is
-  written. The compiler works them out, and `geng docs` lists them.
+**Why.** Geng values never change, but a builder is the exception: it writes
+into its buffer in place, so building a large array is fast. That is only safe
+if nobody is still holding the old builder when it is written to. Go has
+exactly this problem with `append`:
+
+```go
+a := make([]int, 0, 10)
+b := append(a, 1)
+c := append(a, 2) // writes into the same buffer as b
+fmt.Println(b[0]) // prints 2, not 1
+```
+
+In C++ terms, a builder is like a `std::unique_ptr` or a moved-from
+`std::vector`: once you hand it on, the old name is dead. The difference is
+that C++ lets you use a moved-from object anyway, and Geng refuses to compile
+it.
+
+### Looking and using
+
+You may **look at** a builder as often as you like, until you **use** it.
+
+| Looking (any number of times) | Using (once) |
+|---|---|
+| `Builder.length b` | writing to it: `Builder.pushLast x b` |
+| `Builder.get i b` | finishing it: `Builder.toArray b` |
+| `Builder.slice from to b` | storing it in a record or custom type |
+| passing it to a function that only looks | returning it |
+| | passing it to a function that marks it `moved` |
+
+A write gives back a builder, and that new one is what you use next. Think of
+each name as a ticket that can be spent once.
+
+### Allowed
+
+Each write goes to the builder the previous step gave back:
+
+```geng
+let
+    b0 = Builder.empty 3
+    b1 = Builder.pushLast 1 b0
+    b2 = Builder.pushLast 4 b1
+    b3 = Builder.pushLast 9 b2
+in
+Builder.toArray b3
+```
+
+Look first, then use:
+
+```geng
+let
+    n = Builder.length b
+    first = Builder.get 0 b
+in
+Builder.toArray (Builder.pushLast (n + Maybe.withDefault 0 first) b)
+```
+
+One use in each branch is fine, since only one branch runs:
+
+```geng
+if Builder.length b == 0 then
+    Builder.toArray (Builder.pushLast 1 b)
+
+else
+    Builder.toArray b
+```
+
+When you do want two, copy first. `Builder.copy` only looks at `b0`, and makes
+a second builder with its own buffer:
+
+```geng
+let
+    left = Builder.pushLast 2 (Builder.copy b0)
+    right = Builder.pushLast 3 b0
+in
+Array.append (Builder.toArray left) (Builder.toArray right)
+```
+
+### Refused
+
+Writing twice to the same builder. This is the Go `append` bug above:
+
+```geng
+let
+    left = Builder.pushLast 2 b0
+    right = Builder.pushLast 3 b0 -- error: b0 was already used
+in
+...
+```
+
+Looking after using. `toArray` took `b`, so its length is gone:
+
+```geng
+let
+    arr = Builder.toArray b
+in
+Array.pushLast (Builder.length b) arr -- error: b was already used
+```
+
+Storing it twice. Two copies of it would share one buffer:
+
+```geng
+{ first = b, second = b } -- error: b is used twice
+```
+
+Each of these is an `OWNERSHIP` error that points at both places and suggests
+a fix. See [When it is refused](@/docs/type-system.md#when-it-is-refused) for
+more.
+
+### Functions: `moved`
+
+A function argument that is a builder is only looked at, unless the signature
+marks it `moved`. `moved` tells the caller "I use this up, so you cannot use it
+again":
+
+```geng
+addOne : (moved b : Builder Int) -> Builder Int
+addOne b =
+    Builder.pushLast 1 b
+
+
+countOf : Builder Int -> Int
+countOf b =
+    Builder.length b
+```
+
+A caller can call `countOf b` and still use `b` afterwards, but not after
+`addOne b`. The signature must be honest: leaving out `moved` on `addOne` is an
+error, and so is writing it on `countOf`. This is the opposite of Rust, where
+an unmarked argument is moved and a borrow is marked with `&`. For C++, think
+of a plain argument as `const Builder&` and a `moved` one as `Builder&&`.
+
+- `moved` goes on the arguments of a top-level or `let` signature. It cannot
+  go on the result, on a callback's argument, or on a type that is not
+  affine, including a type variable.
+- A function with no signature has its `moved` arguments worked out from its
+  body.
+
+### Your own types
+
+A record with a builder field is affine with no mark. Using the builder field
+takes only that field; the other fields can still be read:
+
+```geng
+let
+    arr = Builder.toArray doc.body
+in
+Array.pushLast (String.count doc.title) arr -- fine: title was not used
+```
+
+A custom type that holds a builder must say so with `@affine`:
+
+```geng
+@affine
+type Document
+    = Document { title : String, body : Builder Line }
+```
+
+`@affine` cannot go on a type alias, and an `@affine` type cannot also have
+`@derive(…)`.
+
+### Fine print
+
+- "Once" means once on each path through the code, as with the `if` above.
+  A record's fields, and a `let`'s bindings, are evaluated in the order they
+  are written.
+- Some code reads a builder more than once without using it, and that is
+  allowed: reading it inside the function that a fold calls, and reading an
+  element of a builder of builders without taking it out.
+- A function given to `Task.andThen`, `Task.onError` or `Task.map` may use a
+  builder it captured, since a task runs that function at most once. Any
+  other function that captures a builder uses it when the function is made.
+- A generic function that keeps a value twice cannot be given a builder.
+- You never write any of the points in this list. The compiler works them
+  out, and `geng docs` lists them for each function.
 
 See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
 introduction.
