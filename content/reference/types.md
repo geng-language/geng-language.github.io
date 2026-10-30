@@ -292,6 +292,18 @@ Each of these is an `OWNERSHIP` error that points at both places and suggests
 a fix. See [When it is refused](@/docs/type-system.md#when-it-is-refused) for
 more.
 
+### Order matters
+
+Looking is only allowed *before* using, so order decides whether code
+compiles. Geng evaluates left to right and top to bottom:
+
+| Where | Order | Refused | Compiles |
+|---|---|---|---|
+| `let` | bindings in the order written | `arr = Builder.toArray b`<br>`n = Builder.length b` | `n = Builder.length b`<br>`arr = Builder.toArray b` |
+| record | fields in the order written | `{ first = b, second = Builder.copy b }` | `{ first = Builder.copy b, second = b }` |
+| call | arguments left to right, then the call | `pair (Builder.toArray b) (Builder.length b)` | `Builder.pushLast (Builder.length b) b` |
+| `\|>` | `x \|> f y` is `f y x`: `x` goes in last | | `b \|> Builder.pushLast (Builder.length b)` |
+
 ### Functions: `moved`
 
 A function argument that is a builder is only looked at, unless the signature
@@ -347,8 +359,6 @@ type Document
 ### Fine print
 
 - "Once" means once on each path through the code, as with the `if` above.
-  A record's fields, and a `let`'s bindings, are evaluated in the order they
-  are written.
 - Some code reads a builder more than once without using it, and that is
   allowed: reading it inside the function that a fold calls, and reading an
   element of a builder of builders without taking it out.

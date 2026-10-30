@@ -680,7 +680,7 @@ rule without trying.
 |---|---|
 | `left = Builder.pushLast 2 b0`<br>`right = Builder.pushLast 3 b0`<br>Two writes to one builder: Go's `append` bug. | `left = Builder.pushLast 2 (Builder.copy b0)`<br>`right = Builder.pushLast 3 b0`<br>`Builder.copy` only looks at `b0`, and makes a second builder with its own buffer. |
 | `arr = Builder.toArray b`<br>`n = Builder.length b`<br>`toArray` spent `b`, so it cannot be read after. | `n = Builder.length b`<br>`arr = Builder.toArray b`<br>Look first, then use. |
-| `{ first = b, second = b }`<br>Two places would share one buffer. | `{ first = Builder.copy b, second = b }`<br>Copy first: fields are evaluated in order, and `b` cannot be read once it is stored. |
+| `{ first = b, second = b }`<br>Two places would share one buffer. | `{ first = Builder.copy b, second = b }`<br>Copy first: see [Order matters](#order-matters). |
 
 "Once" means once on each path the program can take, so one use in each
 branch of an `if` or a `when` is fine:
@@ -692,6 +692,56 @@ if Builder.length b == 0 then
 else
     Builder.toArray b
 ```
+
+### Order matters
+
+You may look at a builder only *before* you use it, so the order your code
+runs in decides whether it compiles. Geng's order is the one you read in:
+left to right and top to bottom.
+
+- **`let` bindings** run in the order they are written. Here `toArray` spends
+  `b` on the first line, so the second line is refused, even though nothing
+  else depends on it:
+
+  ```geng
+  let
+      arr = Builder.toArray b
+      n = Builder.length b -- refused: b was used on the line above
+  in
+  Array.pushLast n arr
+  ```
+
+  Swap the two lines and it compiles.
+
+- **Record fields** are evaluated in the order they are written:
+  `{ first = b, second = Builder.copy b }` is refused, and
+  `{ first = Builder.copy b, second = b }` compiles.
+
+- **Function arguments** are evaluated left to right. With
+  `pair : Array Int -> Int -> Array Int`,
+
+  ```geng
+  pair (Builder.toArray b) (Builder.length b) -- refused
+  ```
+
+  is refused, because the first argument spends `b` before the second reads
+  it. An argument is always computed before the call it goes to, so
+  `Builder.pushLast (Builder.length b) b` is fine: the length is read, then
+  the push spends `b`.
+
+- **A pipeline** `x |> f y` is `f y x`, so the value on the left goes in
+  *last*, even though you read it first. This compiles, because the length is
+  read before the push:
+
+  ```geng
+  b
+      |> Builder.pushLast (Builder.length b)
+      |> Builder.toArray
+  ```
+
+When the compiler refuses code for its order, the error says "read again
+after that" and points at both places. The fix is almost always to move the
+look earlier, or to look at what the use gave back instead.
 
 ### What you write
 
