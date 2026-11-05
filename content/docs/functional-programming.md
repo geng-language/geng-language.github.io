@@ -1,4 +1,6 @@
 +++
+# Outline only: left out of the site until it is written.
+draft = true
 title = "Functional programming for imperative programmers"
 description = "What pure functional programming is, for people who know Python, Go or C++."
 weight = 20

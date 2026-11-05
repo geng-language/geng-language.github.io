@@ -15,7 +15,7 @@ If you know Elm but not Gren, read [From Elm](#from-elm) first.
 
 | | Elm | Gren | Geng |
 |---|---|---|---|
-| Runs on | browser | browser, Node.js | browser, Node.js, BEAM; native, WasmGC and JVM planned |
+| Runs on | browser | browser, Node.js | browser, Node.js, BEAM, native; WasmGC and JVM planned |
 | Collections | `List` | `Array` | `Array` |
 | Tuples | yes | no | no |
 | Pattern matching | `case ... of` | `when ... is` | `when ... is` |

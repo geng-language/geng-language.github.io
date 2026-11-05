@@ -158,8 +158,23 @@ main =
 
 ## What can still go wrong
 
-Very deep recursion that is not a tail call can run out of stack. Tail calls,
-including calls between a group of local functions, run in constant stack on
-every backend, so this mostly affects recursion over deep trees.
+A few things still end a program. Each one ends it with a message saying
+what happened, and exit status 1:
 
-If a program does crash, it exits with status 1.
+- **Running out of stack.** Very deep recursion that is not a tail call can
+  exhaust the stack. Tail calls, including calls between a group of local
+  functions, run in constant stack on every backend, so this mostly affects
+  recursion over deep trees. A native program has a 1 GiB stack, enough for
+  ten million frames.
+- **Running out of memory.** Allocating is treated as something that always
+  succeeds, as in most languages, so a program that runs out of memory ends.
+- **A size past a fixed limit.** Sizes are `Int`s, so a `String`, an
+  `Array` or `Bytes` cannot be longer than 2³¹ − 1. A function that would
+  build one longer, such as `Bytes.flatten`, ends the program and names the
+  limit. Where that can happen, a `…Checked` form, such as
+  `Bytes.flattenChecked`, returns a `Maybe` instead.
+- **`Debug.todo`**, which you write yourself for code that is not finished.
+  It names its module and line, and an `--optimize` build refuses it.
+
+A crash is never how a function reports an ordinary failure. That is what
+`Maybe`, `Result` and `Task` are for.

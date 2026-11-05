@@ -8,8 +8,6 @@ default_language = "en"
 compile_sass = true
 minify_html = false
 build_search_index = false
-generate_feeds = true
-feed_filenames = ["atom.xml"]
 
 [markdown]
 insert_anchor_links = "right"
@@ -30,5 +28,4 @@ repo_url = "https://github.com/geng-language"
 nav = [
   { name = "Docs", url = "/docs/" },
   { name = "Reference", url = "/reference/" },
-  { name = "Blog", url = "/blog/" },
 ]

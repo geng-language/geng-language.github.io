@@ -62,9 +62,24 @@ target = "beam"
 and run `geng run Main` again. On the BEAM, `geng make` builds an OTP
 application and an escript.
 
+## Running natively
+
+To build a Linux executable, change the manifest again:
+
+```toml
+[application]
+geng = "0.6.0 <= v < 0.7.0"
+runtime = "os"
+target = "native"
+```
+
+This needs a C compiler: clang on your `PATH`, or the one the `GENG_CC`
+environment variable names. `geng run Main` builds the executable and runs
+it, and `geng make Main` builds it with optimizations on.
+
 ## Next steps
 
-- New to functional programming? Read
-  [Functional programming for imperative programmers](@/docs/functional-programming.md).
+- New to custom types and pattern matching? Read
+  [Geng's type system](@/docs/type-system.md).
 - Coming from Elm or Gren? Read
   [Geng for Elm and Gren programmers](@/docs/coming-from-elm-gren.md).

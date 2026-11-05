@@ -906,5 +906,3 @@ a program refused on one target is refused on all of them.
 - [Types](@/reference/types.md): the full rules, including numbers, classes
   and type inference.
 - [Error handling](@/docs/error-handling.md): `Maybe` and `Result` in practice.
-- [Functional programming for imperative programmers](@/docs/functional-programming.md):
-  the rest of the mental model.

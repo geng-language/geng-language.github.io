@@ -16,7 +16,31 @@ compatible with existing Gren code.
 
 ### Why not Haskell, OCaml, F#, Gleam or Roc?
 
-*To be written.*
+Each of them is a good language. None of them gives both of the things Geng
+is for: a small language whose programs cannot crash on a null, an
+unhandled error or a missing case, and one program that means the same
+thing on JavaScript, the BEAM and native code.
+
+- **Haskell** is pure and checks a great deal, but it is a large language:
+  higher-kinded types, type-level programming and many extensions. Code can
+  read like a different language per author. Lazy evaluation also makes
+  memory use hard to predict. Haskell does not run on the BEAM.
+- **OCaml** and **F#** have exceptions and mutable variables, and F# has
+  `null` from .NET, so the guarantees are conventions, not checks. Neither
+  runs on the BEAM, and F# runs where .NET runs.
+- **Gleam** is the closest relative: a typed language for the BEAM and
+  JavaScript. It has no native target, and its `Int` is arbitrary-precision
+  on the BEAM but a JavaScript number in the browser, so the same program
+  can give different answers on its two platforms. `panic` and
+  `let assert` end a program from ordinary code.
+- **Roc** compiles to native code and WebAssembly, but not to the BEAM or
+  JavaScript.
+
+Geng starts from Gren, and Gren from Elm, because they already had the
+small language and the clear compiler errors. What Geng adds is the
+specification that makes the platforms agree: fixed integer sizes, its own
+float printing and math functions, and one conformance suite for every
+backend.
 
 ### What does "Geng" mean?
 
@@ -126,10 +150,14 @@ several.
 
 ### How fast is Geng?
 
-On the BEAM, Geng is within 10% of Gleam on the benchmarks measured so far.
+Native code is faster than Node.js on most of the workloads measured: about
+1.5× on a `Dict` updated in a loop, 2.4× on counting words, and 3× on the
+compiler's own formatter and C backend. Math functions such as `sin` and
+`log` are 4× to 9× faster natively than on JavaScript.
+
 On JavaScript, some operations are slower than in Gren, such as 64-bit
-integers and transcendental functions, because they give the same answer on
-every platform.
+integers and math functions, because they give the same answer on every
+platform.
 
 ### Can I use Geng with my existing codebase?
 

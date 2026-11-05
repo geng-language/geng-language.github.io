@@ -1,4 +1,6 @@
 +++
+# Outline only: left out of the site until it is written.
+draft = true
 title = "Common patterns"
 description = "Short recipes for everyday tasks: I/O, processes, pipelines, errors."
 weight = 50

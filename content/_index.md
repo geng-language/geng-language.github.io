@@ -19,7 +19,10 @@ function returns, and how it can fail. The compiler checks all of it. A
 missing case, a value that might not be there, an error nobody handles:
 each one is a compile error, not a crash in production. A Geng program that
 compiles has been checked far more thoroughly than one in Python, Go or C++.
-Your code can still have logic bugs, but it won't crash.
+Your code can still have logic bugs, but it won't crash on a null, a missing
+case or an error nobody handled. What is left is a program running out of
+memory or stack, and the few crashes you write on purpose. See
+[What can still go wrong](@/docs/error-handling.md#what-can-still-go-wrong).
 
 That should not take a specialist. Richer type systems and formal
 verification tools can prove more, but they ask more of the programmer than

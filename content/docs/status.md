@@ -7,12 +7,14 @@ weight = 90
 ## Current status
 
 Geng is in development and has not been released. The language design is
-settled. The compiler builds programs for JavaScript and for the Erlang
-virtual machine (the BEAM), and the native backend is next. Nothing is
-published yet: there is no installer and no first-party package you can
-depend on.
+settled. The compiler builds programs for JavaScript, for the Erlang virtual
+machine (the BEAM), and as native Linux executables and shared libraries.
+Nothing is published yet: there is no installer and no first-party package
+you can depend on.
 
-Expect breaking changes until the first public release.
+The first release will be an alpha, published together with a large native
+application written in Geng. Being an alpha, its standard library, command
+names and options may still change.
 
 ## What works
 
@@ -22,44 +24,49 @@ Expect breaking changes until the first public release.
 | Typed intermediate representation (Core) shared by every backend | Built |
 | JavaScript backend (browser and Node.js) | Built |
 | BEAM backend, including OTP applications, supervision and releases | Built |
-| Native backend (C, Linux first) | Next; an early prototype has run |
+| Native backend: Linux executables, and shared libraries called from C, Go and Python | Built, for Linux on x86-64 |
+| Native on Windows and macOS | Planned, Windows first |
 | WebAssembly (WasmGC) backend | Planned |
 | JVM backend | Planned |
 | [Refinement types](@/docs/type-system.md#refinement-types) | Built, on every target; `geng package` gives a changed refinement its semver magnitude |
 | [Affine builders](@/docs/type-system.md#builders-values-used-once) | Built: checked on every build and every target; `geng docs` and `geng package` report what each function does with its arguments |
 | `geng fmt` | Built |
+| `geng test` | Built, on every target |
 | `geng protobuf` | Built |
 | Package manager (git-based, no registry) | Built; nothing published yet |
-| `geng test` | Not yet; tests run as ordinary programs |
 | REPL | None, by design |
 
 Every backend is checked against the same conformance suite: a set of
 programs whose expected output is written by hand from the specification.
-Today every case in it runs on both JavaScript and the BEAM, and the few
-places where the two differ are recorded with their reasons.
+Today every case in it runs on JavaScript, the BEAM and native code, and the
+few places where they differ are recorded with their reasons.
 
 ## Roadmap
 
 In order:
 
-1. **Native.** A C backend with the Boehm garbage collector, native
-   executables on Linux, and shared libraries callable from C, Python and Go.
-   macOS and Windows follow.
-2. **Self-hosting.** The compiler's front end, today a fork of Gren's Haskell
-   compiler, is rewritten in Geng.
+1. **Self-hosting and Windows.** The compiler's front end, today a fork of
+   Gren's Haskell compiler, is rewritten in Geng, and native code gains a
+   Windows target, so that the compiler itself runs on Windows.
+2. **A second large application:** a web application with a Geng server on
+   the BEAM and a Geng front end in the browser, to find what those two
+   targets lack.
 3. **WebAssembly**, using WasmGC so the browser owns the heap.
 4. **The JVM.**
 5. **Before the public release**, a review of the `geng` command and of the
-   standard library.
+   standard library, and release notes for each target.
+
+The alpha does not wait for the end of this list. It comes when the first
+application is ready to publish.
 
 ## Standard library
 
-Geng has a small `core` library today, plus packages for Node.js, the BEAM
-and a few other areas. Which packages make up the standard library has not
-been decided. The goal is one large, consistent collection, as Go, Python and
-Erlang/OTP have, rather than a small core and scattered packages. That review
-comes before the public release, so there is no standard library
-documentation yet.
+Geng has a small `core` library today, plus packages for Node.js, the BEAM,
+the operating system (`os`, for native programs) and a few other areas.
+Which packages make up the standard library has not been decided. The goal
+is one large, consistent collection, as Go, Python and Erlang/OTP have,
+rather than a small core and scattered packages. That review comes before
+the public release, so there is no standard library documentation yet.
 
 ## What may change
 
@@ -72,15 +79,9 @@ documentation yet.
   expression annotations, a refined type alias cannot take a value as a
   parameter, and only `Int`s and a few sizes can be refined. Each is to be
   looked at again once real programs have used the first design.
-- **Affine types.** On JavaScript and native code, a builder that the
-  checker has passed still keeps a record of what each write replaced;
-  dropping it, which the check allows, is next. `Builder.length` cannot yet
-  be read in a refinement outside `core`, an `@affine` type cannot have
-  `@derive(…)`, and whether `Array.map` should hand each builder on instead
-  of lending it is still open.
+- **Affine types.** `Builder.length` cannot yet be read in a refinement
+  outside `core`, an `@affine` type cannot have `@derive(…)`, and whether
+  `Array.map` should hand each builder on instead of lending it is still
+  open.
 - **Class declarations.** Only `core` can declare classes and instances
   today. Opening this to all code is possible later.
-
-## How to follow along
-
-The [blog](@/blog/_index.md) has announcements.

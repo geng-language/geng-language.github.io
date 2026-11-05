@@ -15,13 +15,19 @@ One program does everything:
 |---|---|
 | `geng make <Module>` | compile a program whose `main` is in `<Module>` |
 | `geng run <Module>` | compile and run it |
+| `geng test` | build and run the project's tests, on its target |
 | `geng release` | build an OTP release (BEAM only) |
 | `geng fmt` | format source files |
 | `geng protobuf` | generate Geng modules from `.proto` files |
+| `geng docs` | a package's documentation |
 | `geng init` | create a project |
-| `geng package ...` | install, uninstall and check dependencies |
+| `geng package ...` | install, uninstall and list outdated dependencies; validate a package; compare two versions' interfaces (`diff`) and choose the next version number (`bump`) |
 
-There is no REPL, and no `geng test` yet: test suites are ordinary programs.
+`geng make` takes `--optimize` for a release build, which also refuses any
+use of `Debug`. On the native target, `--debug-info` keeps the generated C
+and compiles it for gdb, perf and gcov.
+
+There is no REPL.
 
 ## Project file: `geng.toml`
 

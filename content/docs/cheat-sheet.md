@@ -1,4 +1,6 @@
 +++
+# Outline only: left out of the site until it is written.
+draft = true
 title = "Cheat sheet: Python, Go, C++ to Geng"
 description = "Side-by-side equivalents of common constructs."
 weight = 25

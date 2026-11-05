@@ -16,8 +16,7 @@ ordinary file in the host's language.
 nowWith : (Int64 -> posix) -> Task x posix
 ```
 
-- There is one line per host language: `js`, `erlang`, and `c` (accepted, but
-  there is no native backend yet).
+- There is one line per host language: `js`, `erlang` and `c`.
 - For `js` and `erlang`, the line names a module and a function. For `c` it
   names a symbol.
 - The type is checked like any other Geng type.
@@ -76,6 +75,25 @@ Geng module can be a `gen_server` callback module started from an ordinary
 Erlang child specification, and Geng code can call, cast to and monitor
 Erlang processes.
 
+## C
+
+A `c` line names a C function, implemented in a file under the package's
+`src/Ext/`, such as `src/Ext/hash.c`. The build compiles each file with a
+prototype generated from the Geng type, so a function with the wrong number
+of arguments or the wrong number types does not compile.
+
+Below that, C is trusted. Every Geng value that is not a number crosses as
+`void *`, so passing one kind of value where another was meant compiles,
+and can corrupt memory. Write a `c` implementation as carefully as any C.
+
+A package or native application names the C libraries it links in its
+`geng.toml`, and the build asks `pkg-config` for their flags:
+
+```toml
+[native]
+pkg-config = ["xcb", "xcb-render"]
+```
+
 ## Checked before building
 
 A package's `@extern` lines decide which targets it can serve. If an
@@ -85,15 +103,21 @@ declarations that are missing.
 
 ## Calling Geng from C, Python and Go
 
-Designed, not yet built. A Geng package will compile to a shared library
-with a generated C header:
+A native build with `runtime = "host"` and no `main` is a shared library
+with a generated C header. The functions one module exposes are its exports,
+and C, Go and Python programs can load it:
 
 - Every exported function returns a status code, and a failure inside Geng
-  never aborts the host process.
+  never aborts the host process. A crash in Geng code comes back as a
+  status, with the reason readable from the library.
 - Numbers cross directly. Records, custom types and functions cross as
   opaque handles, so the host's garbage collector and Geng's never share
   memory.
 - Only functions with concrete types can be exported. A generic
   `map : (a -> b) -> Array a -> Array b` cannot be called from C, so a
   library exports the specific versions it needs.
-- The first version is single-threaded behind a lock, like Lua.
+- No `Task` crosses the boundary: exports are pure functions.
+- Calls from any number of threads are taken one at a time, behind a lock,
+  as Lua does.
+- To load on other machines, build the library with the system's C
+  compiler, so that it links only the system's C library.

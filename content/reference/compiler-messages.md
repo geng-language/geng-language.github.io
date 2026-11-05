@@ -1,4 +1,6 @@
 +++
+# Outline only: left out of the site until it is written.
+draft = true
 title = "Compiler messages"
 description = "How to read Geng's error messages, and a catalog of common ones."
 weight = 60

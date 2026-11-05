@@ -1,4 +1,6 @@
 +++
+# Outline only: left out of the site until it is written.
+draft = true
 title = "Glossary"
 description = "Functional-programming and Geng terms, in plain language."
 weight = 90

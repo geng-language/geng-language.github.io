@@ -22,7 +22,6 @@ Or run `devbox shell` and use `zola` directly. When upgrading Zola, update both
 |---|---|
 | `content/docs/` | Guides and tutorials |
 | `content/reference/` | Language reference |
-| `content/blog/` | Blog posts (`YYYY-MM-DD-slug.md`) |
 | `templates/` | Tera templates |
 | `sass/site.scss` | Site styles |
 | `syntaxes/geng.tmLanguage.json` | TextMate grammar for ` ```geng ` code blocks |
