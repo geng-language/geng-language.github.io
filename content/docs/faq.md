@@ -44,7 +44,7 @@ backend.
 
 ### What does "Geng" mean?
 
-*To be written.*
+It is the Thai word เก่ง, which means "skilled" or "capable".
 
 ### Is it ready for production?
 
