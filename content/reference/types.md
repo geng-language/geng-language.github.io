@@ -162,7 +162,7 @@ refined with a condition after `where`, `(i : Int where 0 <= i)`. The
 condition may name any argument of the same signature, before or after it:
 
 ```geng
-getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
+getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 ```
 
 - A refinement goes on the arguments and the result of a top-level or `let`

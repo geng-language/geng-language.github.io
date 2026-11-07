@@ -325,7 +325,7 @@ argument of the same signature, before or after it:
 
 ```geng
 -- The index must be inside the array that comes after it.
-getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
+getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 
 -- The result promises something about itself and the arguments.
 pushLast : x -> (a : Array x) -> (r : Array x where Array.length r == Array.length a + 1)
@@ -337,7 +337,7 @@ initialize : (n : Int where 0 <= n) -> ((i : Int where 0 <= i && i < n) -> x) ->
 firstOf : (a : Array x where Array.length a > 0) -> x
 ```
 
-`getAt` needs no `Maybe` and no bounds check, because a call that might read
+`getProven` needs no `Maybe` and no bounds check, because a call that might read
 outside the array does not compile. A name that no condition reads is an
 error, since it would look as if it meant something.
 
@@ -381,7 +381,7 @@ type alias Percent =
 setVolume : Percent -> Task Never {}
 
 -- Named, so that another condition can read it, and with more added:
-getAt : (i : Nat) -> (a : Array x where i < Array.length a) -> x
+getProven : (i : Nat) -> (a : Array x where i < Array.length a) -> x
 ```
 
 Unlike the opaque `Percent` above, this one is a plain `Int`. `setVolume 50`
@@ -391,7 +391,7 @@ A refined alias goes only where a signature names a value, or in a field of
 a record written there. `Array Nat`, `Maybe Percent` and a field of type
 `Nat` in another type alias are errors, because nothing there is checked. An
 alias's condition reads only its own value, so `Nat` cannot say "an index
-into this array": write that one out, as `getAt` does.
+into this array": write that one out, as `getProven` does.
 
 ### Records with a rule
 
@@ -406,7 +406,7 @@ type alias Move =
 -- Every caller must pass a Move that keeps the rule, so the read needs no test.
 apply : Move -> Item
 apply move =
-    Array.getAt move.index move.items
+    Array.getProven move.index move.items
 
 -- Every Move this returns must keep it too, on both branches.
 next : Move -> Move
@@ -491,7 +491,7 @@ sum a =
     let
         go i acc =
             if i < Array.length a then
-                go (i + 1) (acc + Array.getAt i a)
+                go (i + 1) (acc + Array.getProven i a)
 
             else
                 acc
@@ -499,9 +499,9 @@ sum a =
     go 0 0
 ```
 
-`Array.getAt i a` needs `0 <= i` and `i < Array.length a`. The `if` gives the
-second. The first comes from the loop: `go` starts at 0 and only adds 1, and
-the compiler finds that by itself. As a rule, you write refinements on the
+`Array.getProven i a` needs `0 <= i` and `i < Array.length a`. The `if` gives
+the second. The first comes from the loop: `go` starts at 0 and only adds 1,
+and the compiler finds that by itself. As a rule, you write refinements on the
 functions a module exposes, which are their contract, and the compiler infers
 them for private loops. It does not infer them for functions that call each
 other, or a loop whose facts relate three values; those need a refinement
@@ -523,13 +523,13 @@ name.
 refined index and return the element directly:
 
 ```geng
-Array.getAt : (i : Int where 0 <= i && i < Array.length array) -> (array : Array a) -> a
-Bytes.getAt : (index : Int where 0 <= index && index < Bytes.length bytes) -> (bytes : Bytes) -> UInt8
+Array.getProven : (i : Int where 0 <= i && i < Array.length array) -> (array : Array a) -> a
+Bytes.getProven : (index : Int where 0 <= index && index < Bytes.length bytes) -> (bytes : Bytes) -> UInt8
 ```
 
 Use them where a test you write anyway keeps the index in range, as a loop
 does. Elsewhere, `Array.get` and `Bytes.get` still return `Maybe`. Note that
-`Array.getAt` does not count a negative index from the end, as `Array.get`
+`Array.getProven` does not count a negative index from the end, as `Array.get`
 does.
 
 Other functions in `Array` promise something about what they return, so a
@@ -550,15 +550,15 @@ mirrored a =
         back =
             Array.reverse a
     in
-    Array.indexedMap (\i x -> x * 100 + Array.getAt i back) a
+    Array.indexedMap (\i x -> x * 100 + Array.getProven i back) a
 ```
 
 A function that promises something asks nothing of its caller, so a program
 that calls only `Array.map` and the like builds exactly as it would without
-refinements. A function that asks something of its arguments, as `getAt`
+refinements. A function that asks something of its arguments, as `getProven`
 does, cannot be passed around as a value, because the compiler could not see
 its calls. Pass a lambda that calls it instead:
-`Array.indexedMap (\i _ -> Array.getAt i b) a`.
+`Array.indexedMap (\i _ -> Array.getProven i b) a`.
 
 ### Overflow is checked too
 
@@ -592,20 +592,20 @@ check that there is one:
 ```geng
 changes : Array Float -> Array Float
 changes temps =
-    Array.indexedMap (\i t -> t - Array.getAt (i - 1) temps) temps
+    Array.indexedMap (\i t -> t - Array.getProven (i - 1) temps) temps
 ```
 
 ```text
 -- CANNOT SHOW A REFINEMENT -------------------------------------- src/Main.geng
 
-`getAt` requires this of its argument `i`:
+`getProven` requires this of its argument `i`:
 
     0 <= i && i < Array.length array
 
 and I cannot show it here:
 
-8|     Array.indexedMap (\i t -> t - Array.getAt (i - 1) temps) temps
-                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+8|     Array.indexedMap (\i t -> t - Array.getProven (i - 1) temps) temps
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here, with this call's values for its names, that is:
 
@@ -639,9 +639,9 @@ refinements unchecked.
 
 Nothing at run time. At compile time, a program with no refinements, or one
 that only calls functions like `Array.map` that promise something, builds
-exactly as before. One that calls `getAt` or writes its own refinements takes
-a little longer: a small program calling `Array.getAt` builds warm in 0.30
-to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
+exactly as before. One that calls `getProven` or writes its own refinements
+takes a little longer: a small program calling `Array.getProven` builds warm
+in 0.30 to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
 
 ### What they will not do
 

@@ -38,7 +38,7 @@ weight = 25
 - Tuples → records (Gren and Geng have no tuples).
 - Updating a field.
 - Range types, `assert`, validators (`conint(gt=0)`) → [refinement types](@/docs/type-system.md#refinement-types), checked at compile time.
-- Bounds-checked indexing (`a[i]`, `a.at(i)`) → `Array.get` (returns a `Maybe`), or `Array.getAt` when the compiler can prove the index is in range.
+- Bounds-checked indexing (`a[i]`, `a.at(i)`) → `Array.get` (returns a `Maybe`), or `Array.getProven` when the compiler can prove the index is in range.
 
 ## Missing values and errors
 

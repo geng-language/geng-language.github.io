@@ -52,7 +52,7 @@ toCelsius reading =
 -- The newest reading. The type says there is always at least one.
 latest : (readings : Array Reading where Array.length readings > 0) -> Float
 latest readings =
-    toCelsius (Array.getAt (Array.length readings - 1) readings)
+    toCelsius (Array.getProven (Array.length readings - 1) readings)
 
 report : Array Reading -> String
 report readings =
