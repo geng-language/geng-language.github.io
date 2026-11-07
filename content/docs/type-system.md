@@ -52,6 +52,8 @@ Differences from what you may know:
   unchanged.
 - **No tuples.** Use a small record instead: `{ min = 0, max = 10 }`.
 
+Full rules: [Records](@/reference/types.md#records).
+
 ## Custom types: this *or* that
 
 ### Starting from enums
@@ -178,6 +180,8 @@ error that points at it. In C, Python or Go, the missing case shows up at run
 time, if at all. In Geng the compiler gives you a list of the places to
 change.
 
+Full rules: [Pattern matching](@/reference/keywords.md#pattern-matching).
+
 ### Making impossible states impossible
 
 Custom types let you rule out combinations of data that make no sense. Here
@@ -249,6 +253,8 @@ type Tree a
 There are no pointers and no null children. An empty subtree is `Leaf`, and
 pattern matching makes you handle it.
 
+Full rules: [Custom types](@/reference/types.md#custom-types).
+
 ## Opaque types: rules the compiler cannot see
 
 Some rules are about values, not shapes. A percentage is an `Int` from 0 to
@@ -296,6 +302,9 @@ This works, but it has costs:
 
 Refinement types remove these costs for rules the compiler can understand.
 
+Full rules: [Custom types](@/reference/types.md#custom-types), on exposing a
+type without its constructors.
+
 ## Refinement types
 
 ### What they are
@@ -317,6 +326,8 @@ that a value really meets the condition wherever the refined type is required.
 `geng make` refuses a program where it cannot prove one. Once checked, the
 condition is erased. A refined program runs exactly the same code as an
 unrefined one, with no check added at run time, on every target.
+
+Full rules: [Refinement types](@/reference/types.md#refinement-types).
 
 ### Writing one
 
@@ -364,6 +375,9 @@ including callbacks. A `let`'s condition may also name the arguments of the
 signatures around it. Annotations on expressions cannot be refined yet; a
 record is refined through an alias, as the next sections show.
 
+Full rules: [Where a refinement goes](@/reference/types.md#where-a-refinement-goes)
+and [Conditions](@/reference/types.md#conditions).
+
 ### Naming a refinement
 
 A type alias can name a refinement, so you write it once. `core` provides
@@ -392,6 +406,8 @@ a record written there. `Array Nat`, `Maybe Percent` and a field of type
 `Nat` in another type alias are errors, because nothing there is checked. An
 alias's condition reads only its own value, so `Nat` cannot say "an index
 into this array": write that one out, as `getProven` does.
+
+Full rules: [Type aliases](@/reference/types.md#type-aliases).
 
 ### Records with a rule
 
@@ -465,6 +481,9 @@ goes for a record with a condition on a field, and an extensible record,
 `{ r | index : Int }`, cannot have one. So an application's model cannot
 hold a `Move` for now, and a record wrapped in a custom type, such as
 `type Path = Path { ... }`, cannot carry a rule.
+
+Full rules: [Type aliases](@/reference/types.md#type-aliases) and
+[Where a refinement goes](@/reference/types.md#where-a-refinement-goes).
 
 ### Things that are almost refinement types
 
@@ -546,6 +565,8 @@ promised is known in the `else` branch. It treats the same sum written twice
 as two values, so test a sum once, give it a name with `let`, and use the
 name.
 
+Full rules: [How a condition is proved](@/reference/types.md#how-a-condition-is-proved).
+
 ### Refinements in `core`
 
 `core` uses refinements for its own reads, and has two functions that take a
@@ -610,6 +631,8 @@ Geng's own code had exactly this bug in its byte decoder, and four sums in
 `core`'s sort wrapped past 2^30 elements. Refinement types found all of them,
 and they are fixed.
 
+Full rules: [Conditions](@/reference/types.md#conditions).
+
 ### When a refinement does not hold
 
 An error says what was required, points at the call, lists each fact the
@@ -663,6 +686,8 @@ A package is held to its own refinements: `geng make` in the package and
 application also checks every package it uses on every build, so a newer
 compiler, or a different version of a dependency, can never leave a package's
 refinements unchecked.
+
+Full rules: [In a package](@/reference/types.md#refinements-in-a-package).
 
 ### What it costs
 
@@ -757,6 +782,9 @@ In practice you rarely name each step. A fold or a pipeline passes the builder
 along for you, as `squares` does above, and most code already follows the
 rule without trying.
 
+Full rules: [Affine types](@/reference/types.md#affine-types) and
+[Looking and using](@/reference/types.md#looking-and-using).
+
 ### Compiles, and does not
 
 | Refused | Compiles |
@@ -775,6 +803,8 @@ if Builder.length b == 0 then
 else
     Builder.toArray b
 ```
+
+Full rules: [Looking and using](@/reference/types.md#looking-and-using).
 
 ### Order matters
 
@@ -826,6 +856,8 @@ When the compiler refuses code for its order, the error says "read again
 after that" and points at both places. The fix is almost always to move the
 look earlier, or to look at what the use gave back instead.
 
+Full rules: [Order matters](@/reference/types.md#order-matters).
+
 ### What you write
 
 Almost nothing. There are two marks, and both are about saying what a
@@ -867,6 +899,9 @@ shared freely as before. Geng still writes those in place when it can prove
 no one else holds them, but that is an optimization, not a rule you have to
 follow.
 
+Full rules: [Functions: `moved`](@/reference/types.md#functions-moved) and
+[Your own types](@/reference/types.md#your-own-types).
+
 ### What the compiler works out for itself
 
 Some code looks like it uses a builder many times, but only looks at it. That
@@ -884,6 +919,8 @@ it out, and for a function given to `Task.andThen` that uses a builder it
 captured, since a task runs that function at most once. Whether a function
 keeps the callback you give it, and whether its result is a borrow of an
 argument, are worked out from its body too.
+
+Full rules: [Fine print](@/reference/types.md#fine-print).
 
 ### When it is refused
 
@@ -942,7 +979,7 @@ Other common fixes:
 | `Array.sortWith` or `Array.remove` on an `Array (Builder Int)` | keep the rows in a `Builder`, and move them with `Builder.rotate` |
 | `get` a row of a builder of builders, change it, and `set` it back | `Builder.update`, which hands the row to your function and puts back what it returns |
 
-The full rules are in [Affine types](@/reference/types.md#affine-types).
+Full rules: [Affine types](@/reference/types.md#affine-types).
 
 ### In a package
 
@@ -951,6 +988,8 @@ you wrote it (`moved`, `@affine`) or the compiler worked it out. `geng docs`
 lists these facts for each exposed function, and `geng package diff`
 compares them between versions. Each one limits what a caller may do, so
 gaining one is a major change and losing one is minor.
+
+Full rules: [In a package](@/reference/types.md#builders-in-a-package).
 
 ### What it costs
 
@@ -966,6 +1005,8 @@ next.)
 On JavaScript, and natively, a builder is a buffer written in place. On the
 BEAM it is a persistent tree, as before. The rules are the same everywhere:
 a program refused on one target is refused on all of them.
+
+Full rules: [Fine print](@/reference/types.md#fine-print).
 
 ## Summary
 

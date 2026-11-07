@@ -239,7 +239,7 @@ A condition the compiler cannot prove is a `CANNOT SHOW A REFINEMENT` error.
 When a proof needs more cases than the checker tries, the error says so
 rather than guessing.
 
-### In a package
+### In a package {#refinements-in-a-package}
 
 A refinement on an exposed function is part of its type. Asking less of an
 argument, or promising more in a result, is a minor change; asking more, or
@@ -369,7 +369,7 @@ type Document
   refused on all. On JavaScript and native targets a builder is a buffer
   written in place; on the BEAM it is a persistent tree.
 
-### In a package
+### In a package {#builders-in-a-package}
 
 What a function does with its arguments, whether written (`moved`,
 `@affine`) or worked out by the compiler, is part of its interface.
