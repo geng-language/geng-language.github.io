@@ -25,6 +25,8 @@ extra_themes = ["syntaxes/geng-jade-light.json", "syntaxes/geng-jade-dark.json"]
 [extra]
 tagline = "Correct by construction. Reliable everywhere."
 repo_url = "https://github.com/geng-language"
+# Set to true once there is code to see; until then the nav shows GitHub as coming soon.
+repo_public = false
 nav = [
   { name = "Docs", url = "/docs/" },
   { name = "Reference", url = "/reference/" },

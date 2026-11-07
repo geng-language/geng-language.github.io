@@ -3,9 +3,12 @@ title = "Geng"
 description = "Correct by construction. Reliable everywhere."
 +++
 
-Geng is a small, pure functional language in the family of Elm and Gren. You
-describe your problem in types, and the compiler checks your program against
-them before it ever runs.
+Speed is easy to measure. Correctness is harder, and it matters more: a fast
+program you can't trust is no use. Geng is a small, pure functional language
+that moves as much checking as it can into the compiler, so a program is
+checked before it runs, not while it does. That matters more now that LLMs
+write much of our code. The compiler holds a model's work to the same
+standard as anyone's.
 
 ## Correct by construction
 
