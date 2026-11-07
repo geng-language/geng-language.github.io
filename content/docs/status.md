@@ -75,10 +75,12 @@ the public release, so there is no standard library documentation yet.
   Until it exists, `core` has an interim `Process.spawn`.
 - **The command-line tool.** Command names and options are reviewed before
   release.
-- **Refinement types.** Refinements cannot yet go on record fields or
-  expression annotations, a refined type alias cannot take a value as a
-  parameter, and only `Int`s and a few sizes can be refined. Each is to be
-  looked at again once real programs have used the first design.
+- **Refinement types.** A record's rule is written as a refined alias over
+  the whole record; such an alias cannot yet be a field of another type
+  alias or sit inside a `Maybe`, an `Array` or a custom type, and a refined
+  type alias cannot take a value as a parameter. Only `Int`s, a record's
+  `Int` fields and a few sizes can be refined. The next steps are facts
+  about custom types, `modBy`, and refinements inside type arguments.
 - **Affine types.** `Builder.length` cannot yet be read in a refinement
   outside `core`, an `@affine` type cannot have `@derive(…)`, and whether
   `Array.map` should hand each builder on instead of lending it is still

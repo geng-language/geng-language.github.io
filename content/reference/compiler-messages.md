@@ -28,7 +28,8 @@ weight = 60
   - Records (missing field, unknown field, update of a non-record).
   - Targets and runtimes (`EXTERNS DO NOT SERVE THE TARGET`, `INCOMPATIBLE RUNTIME`, `NO BACKEND FOR THE TARGET`).
   - Refinements: writing one (`BAD REFINEMENT`, `MISPLACED REFINEMENT`,
-    `NONLINEAR REFINEMENT`, `UNKNOWN NAME IN REFINEMENT`, `UNUSED NAME`) and
+    `NONLINEAR REFINEMENT`, `UNKNOWN NAME IN REFINEMENT`,
+    `NO SUCH FIELD IN A REFINEMENT`, `UNUSED NAME`) and
     proving one (`CANNOT SHOW A REFINEMENT`, `CANNOT DECIDE A REFINEMENT`,
     `ARITHMETIC MAY WRAP`). The proving errors list each fact the compiler
     had and values that break the condition; see

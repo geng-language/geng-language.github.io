@@ -345,21 +345,24 @@ A condition is deliberately small. It can contain:
 
 - integer literals, and the names of the signature's arguments (or the
   result's own name, in the result's condition);
-- a few *measures* applied to an argument, such as `Array.length`,
-  `Bytes.length`, `String.count`, `Dict.count` and `Set.count`;
+- a record's fields, to any depth: `m.index`, `o.move.index`;
+- a few *measures* applied to an argument or a field, such as
+  `Array.length`, `Bytes.length`, `String.count`, `Dict.count` and
+  `Set.count`: `Array.length m.items`;
 - `+`, `-`, and `*` with a literal on one side;
 - `<`, `<=`, `>`, `>=`, `==` and `/=`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
 
-Nothing else: no calls to your own functions, no records and no floats. A
-condition outside this list is a `BAD REFINEMENT` error. The arithmetic in a
+Nothing else: no calls to your own functions, no records built in a
+condition, and no floats. A condition outside this list is a
+`BAD REFINEMENT` error. The arithmetic in a
 condition is exact, because it is never run: `at + 4 <= Bytes.length b` means
 the same as `at <= Bytes.length b - 4`.
 
 Refinements go on the arguments and result of a top-level or `let` signature,
 including callbacks. A `let`'s condition may also name the arguments of the
-signatures around it. Record fields and annotations on expressions cannot be
-refined yet.
+signatures around it. Annotations on expressions cannot be refined yet; a
+record is refined through an alias, as the next sections show.
 
 ### Naming a refinement
 
@@ -384,10 +387,55 @@ getAt : (i : Nat) -> (a : Array x where i < Array.length a) -> x
 Unlike the opaque `Percent` above, this one is a plain `Int`. `setVolume 50`
 compiles with no `Maybe`, and `setVolume 150` does not compile at all.
 
-A refined alias goes only where a signature names a value. `Array Nat`,
-`Maybe Percent` and a record field of type `Nat` are errors, because nothing
-there is checked. An alias's condition reads only its own value, so `Nat`
-cannot say "an index into this array": write that one out, as `getAt` does.
+A refined alias goes only where a signature names a value, or in a field of
+a record written there. `Array Nat`, `Maybe Percent` and a field of type
+`Nat` in another type alias are errors, because nothing there is checked. An
+alias's condition reads only its own value, so `Nat` cannot say "an index
+into this array": write that one out, as `getAt` does.
+
+### Records with a rule
+
+A record often has a rule that ties its fields together: an index that stays
+inside the array beside it, a cursor that stays inside the screen. Write the
+rule once, as a refined alias over the whole record:
+
+```geng
+type alias Move =
+    (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
+
+-- Every caller must pass a Move that keeps the rule, so the read needs no test.
+apply : Move -> Item
+apply move =
+    Array.getAt move.index move.items
+
+-- Every Move this returns must keep it too, on both branches.
+next : Move -> Move
+next move =
+    if move.index + 1 < Array.length move.items then
+        { move | index = move.index + 1 }
+
+    else
+        move
+```
+
+The compiler reads records the way you do. A record literal is checked with
+the values it was written with, and an update with the fields it changed and
+the rest of the record it started from. A field tested and then used is the
+same value, with or without an alias. A record chosen by an `if` is either
+branch's, field by field, so `m = if reset then { move | index = 0 } else
+move` is still a `Move`.
+
+A `Move` can also be a field of a record that a signature takes or returns.
+The rule then applies to that field:
+
+```geng
+split : Move -> { move : Move, rest : Int }
+```
+
+Anywhere else, a `Move` cannot go yet: not as a field of another type alias,
+and not inside a `Maybe`, an `Array` or a custom type's constructor. So an
+application's model cannot hold one for now, and a record wrapped in a
+custom type, such as `type Path = Path { ... }`, cannot carry a rule.
 
 ### Things that are almost refinement types
 
@@ -459,9 +507,15 @@ them for private loops. It does not infer them for functions that call each
 other, or a loop whose facts relate three values; those need a refinement
 written on them.
 
-The compiler follows a value chosen by an `if`, and understands `min`, `max`
-and `clamp`. It treats the same sum written twice as two values, so test a
-sum once, give it a name with `let`, and use the name.
+The compiler follows a value chosen by an `if`, whether it is a number, an
+array or a record, and understands `min`, `max` and `clamp`. A test that
+mixes a `Bool` with a comparison keeps the comparison: inside
+`if wrap && x < cols - 1`, it knows `x < cols - 1`. `f <| x` and `x |> f`
+are calls like `f x`. What a function's result promises holds only where the
+call was made: after `if b then below n else need n`, nothing `below`
+promised is known in the `else` branch. It treats the same sum written twice
+as two values, so test a sum once, give it a name with `let`, and use the
+name.
 
 ### Refinements in `core`
 

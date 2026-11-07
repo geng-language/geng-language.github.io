@@ -139,8 +139,16 @@ type alias Nat =
     (n : Int where 0 <= n)
 ```
 
-A refined alias goes only where a signature names a value: `Array Nat`,
-`Maybe Nat` and a record field of type `Nat` are errors.
+A refined alias goes only where a signature names a value, or in a field of
+a record written there (`{ count : Nat } -> Int`): `Array Nat`, `Maybe Nat`
+and a field of type `Nat` in another type alias are errors.
+
+An alias over a record states a rule about its fields:
+
+```geng
+type alias Move =
+    (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
+```
 
 ## Function types
 
@@ -158,14 +166,16 @@ getAt : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 ```
 
 - A refinement goes on the arguments and the result of a top-level or `let`
-  signature, callbacks included, and as the whole body of a type alias. It
-  cannot go on a record field, a variant's argument or an expression's
-  annotation.
-- A condition holds integer literals, the signature's names, the measures
-  `Array.length`, `Bytes.length`, `String.count`, `Dict.count` and
-  `Set.count`, `+`, `-`, `*` with a literal on one side, the six
-  comparisons, and `&&`, `||`, `not`, `True` and `False`. A name read
-  directly must be an `Int`.
+  signature, callbacks included, and as the whole body of a type alias,
+  including an alias over a record. A refined alias may be a field of a
+  record in a signature. A refinement cannot go on a variant's argument, a
+  field of another type alias or an expression's annotation.
+- A condition holds integer literals, the signature's names and their
+  fields (`m.index`, `o.move.index`), the measures `Array.length`,
+  `Bytes.length`, `String.count`, `Dict.count` and `Set.count` of a name or a
+  field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
+  `&&`, `||`, `not`, `True` and `False`. A name or field read directly must
+  be an `Int`.
 - A condition's arithmetic is exact. The program's own `Int` arithmetic still
   wraps at 32 bits, and where it feeds a refinement the compiler must show
   that it does not wrap.

@@ -81,6 +81,12 @@ parentheses.
 safeDivide : Int -> (d : Int where d /= 0) -> Int
 ```
 
+A condition may read a record's fields, written as in an expression:
+
+```geng
+apply : (m : { items : Array Item, index : Int } where m.index < Array.length m.items) -> Item
+```
+
 `moved`, for an [affine](@/reference/types.md#affine-types) argument the
 function uses up, goes before the name, and can be combined with a
 refinement:
