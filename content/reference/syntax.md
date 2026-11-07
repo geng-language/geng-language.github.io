@@ -87,6 +87,16 @@ A condition may read a record's fields, written as in an expression:
 apply : (m : { items : Array Item, index : Int } where m.index < Array.length m.items) -> Item
 ```
 
+A record field's condition follows its type, inside the braces, and names the
+record's other fields bare:
+
+```geng
+type alias Move =
+    { items : Array Item
+    , index : Int where 0 <= index && index < Array.length items
+    }
+```
+
 `moved`, for an [affine](@/reference/types.md#affine-types) argument the
 function uses up, goes before the name, and can be combined with a
 refinement:

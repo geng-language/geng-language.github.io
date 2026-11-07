@@ -143,9 +143,15 @@ A refined alias goes only where a signature names a value, or in a field of
 a record written there (`{ count : Nat } -> Int`): `Array Nat`, `Maybe Nat`
 and a field of type `Nat` in another type alias are errors.
 
-An alias over a record states a rule about its fields:
+An alias over a record states a rule about its fields, on the fields or on
+the whole record. These two are the same type:
 
 ```geng
+type alias Move =
+    { items : Array Item
+    , index : Int where 0 <= index && index < Array.length items
+    }
+
 type alias Move =
     (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
 ```
@@ -167,9 +173,12 @@ getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 
 - A refinement goes on the arguments and the result of a top-level or `let`
   signature, callbacks included, and as the whole body of a type alias,
-  including an alias over a record. A refined alias may be a field of a
-  record in a signature. A refinement cannot go on a variant's argument, a
-  field of another type alias or an expression's annotation.
+  including an alias over a record. A record's field may have a condition
+  after its type, `index : Int where index < Array.length items`, which reads
+  the record's fields bare and only them; a record with one is refined like
+  a refined alias. A refined alias may be a field of a record in a
+  signature. A refinement cannot go on a variant's argument, a field of
+  another type alias, an extensible record or an expression's annotation.
 - A condition holds integer literals, the signature's names and their
   fields (`m.index`, `o.move.index`), the measures `Array.length`,
   `Bytes.length`, `String.count`, `Dict.count` and `Set.count` of a name or a

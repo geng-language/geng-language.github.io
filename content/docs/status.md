@@ -75,9 +75,9 @@ the public release, so there is no standard library documentation yet.
   Until it exists, `core` has an interim `Process.spawn`.
 - **The command-line tool.** Command names and options are reviewed before
   release.
-- **Refinement types.** A record's rule is written as a refined alias over
-  the whole record; such an alias cannot yet be a field of another type
-  alias or sit inside a `Maybe`, an `Array` or a custom type, and a refined
+- **Refinement types.** A record's rule is written on its fields or over the
+  whole record; such a record cannot yet be a field of another type alias or
+  sit inside a `Maybe`, an `Array` or a custom type, and a refined
   type alias cannot take a value as a parameter. Only `Int`s, a record's
   `Int` fields and a few sizes can be refined. The next steps are facts
   about custom types, `modBy`, and refinements inside type arguments.

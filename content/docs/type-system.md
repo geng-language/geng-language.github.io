@@ -397,11 +397,13 @@ into this array": write that one out, as `getProven` does.
 
 A record often has a rule that ties its fields together: an index that stays
 inside the array beside it, a cursor that stays inside the screen. Write the
-rule once, as a refined alias over the whole record:
+rule once, on the field it is about:
 
 ```geng
 type alias Move =
-    (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
+    { items : Array Item
+    , index : Int where 0 <= index && index < Array.length items
+    }
 
 -- Every caller must pass a Move that keeps the rule, so the read needs no test.
 apply : Move -> Item
@@ -416,6 +418,31 @@ next move =
 
     else
         move
+```
+
+A field's condition may name any of the record's fields, written bare. Give
+each field the facts about it, and the record's rule is all of them together:
+
+```geng
+type alias Span =
+    { start : Int where 0 <= start
+    , end : Int where start <= end
+    }
+```
+
+You can also write the rule on the whole record, naming it. This `Move` is the
+same type as the one above:
+
+```geng
+type alias Move =
+    (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
+```
+
+A rule that needs another argument of a signature goes on the whole record,
+since a field's condition reads only its record's fields:
+
+```geng
+pick : (n : Int) -> (r : { index : Int } where r.index < n) -> Int
 ```
 
 The compiler reads records the way you do. A record literal is checked with
@@ -433,9 +460,11 @@ split : Move -> { move : Move, rest : Int }
 ```
 
 Anywhere else, a `Move` cannot go yet: not as a field of another type alias,
-and not inside a `Maybe`, an `Array` or a custom type's constructor. So an
-application's model cannot hold one for now, and a record wrapped in a
-custom type, such as `type Path = Path { ... }`, cannot carry a rule.
+and not inside a `Maybe`, an `Array` or a custom type's constructor. The same
+goes for a record with a condition on a field, and an extensible record,
+`{ r | index : Int }`, cannot have one. So an application's model cannot
+hold a `Move` for now, and a record wrapped in a custom type, such as
+`type Path = Path { ... }`, cannot carry a rule.
 
 ### Things that are almost refinement types
 
