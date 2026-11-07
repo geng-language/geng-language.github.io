@@ -1,6 +1,6 @@
 +++
 title = "Types"
-description = "Built-in types, records, custom types, classes and type inference."
+description = "Built-in types, records, custom types, refinement types, builders (affine types), classes and type inference."
 weight = 40
 +++
 
@@ -171,54 +171,96 @@ condition may name any argument of the same signature, before or after it:
 getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 ```
 
-- A refinement goes on the arguments and the result of a top-level or `let`
-  signature, callbacks included, and as the whole body of a type alias,
-  including an alias over a record. A record's field may have a condition
-  after its type, `index : Int where index < Array.length items`, which reads
-  the record's fields bare and only them; a record with one is refined like
-  a refined alias. A refined alias may be a field of a record in a
-  signature. A refinement cannot go on a variant's argument, a field of
-  another type alias, an extensible record or an expression's annotation.
+The compiler proves every condition at compile time, then erases it: a
+refined type is its underlying type at run time. See
+[Refinement types](@/docs/type-system.md#refinement-types) for a guided
+introduction.
+
+### Where a refinement goes
+
+- On the arguments and the result of a top-level or `let` signature,
+  callbacks included. A `let` signature's condition may also name the
+  arguments of the signatures around it.
+- As the whole body of a type alias, including an alias over a record.
+- On a record's field, after its type:
+  `index : Int where index < Array.length items`. The condition reads the
+  record's fields bare, and only them. A record with one is refined like a
+  refined alias.
+- A refined alias may be a field of a record written in a signature.
+
+A refinement cannot go on a variant's argument, a field of another type
+alias, an extensible record or an expression's annotation.
+
+A function that refines its arguments cannot be used as a value, since the
+compiler could not see its calls. Pass a lambda that calls it instead:
+`Array.indexedMap (\i _ -> Array.getProven i b) a`.
+
+### Conditions
+
 - A condition holds integer literals, the signature's names and their
   fields (`m.index`, `o.move.index`), the measures `Array.length`,
   `Bytes.length`, `String.count`, `Dict.count` and `Set.count` of a name or a
   field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
   `&&`, `||`, `not`, `True` and `False`. A name or field read directly must
   be an `Int`.
+- Nothing else: no calls to other functions, no records built in a
+  condition, and no floats. Anything else is a `BAD REFINEMENT` error.
 - A condition's arithmetic is exact. The program's own `Int` arithmetic still
   wraps at 32 bits, and where it feeds a refinement the compiler must show
-  that it does not wrap.
+  that it does not wrap. When it may wrap, the error suggests a form that
+  cannot, such as `n <= length - offset` for `offset + n <= length`.
 - A name that no condition reads is an error.
-- The compiler proves each condition at compile time, from the tests on the
-  way to a call, the caller's refinements, the results of functions it
-  called, and invariants it infers for loops. Then the condition is erased:
-  a refined type is its underlying type at run time.
 
-See [Refinement types](@/docs/type-system.md#refinement-types) for a guided
-introduction.
+### How a condition is proved
 
-## Affine types
+Where a refined type is required, the compiler uses:
+
+- the tests on the way there, from an `if` or a `when` on a number. A test
+  that joins a `Bool` and a comparison with `&&` keeps the comparison;
+- the refinements on the enclosing function's arguments;
+- the promises in the results of functions called on the way. A promise
+  holds only where its call was made: after
+  `if b then below n else need n`, nothing `below` promised is known in the
+  `else` branch;
+- invariants it infers for private loops. It does not infer them for
+  functions that call each other, or for facts that relate three values;
+  those need a refinement written on them.
+
+It follows a value chosen by an `if`, whether a number, an array or a
+record (field by field), and understands `min`, `max` and `clamp`.
+`f <| x` and `x |> f` are calls like `f x`. A record literal is checked with
+the values it was written with, and a record update with the fields it
+changed and the rest of the record it started from.
+
+The same expression written twice, such as a sum, is two separate values. To
+test it once and use it, name it with `let`.
+
+A condition the compiler cannot prove is a `CANNOT SHOW A REFINEMENT` error.
+When a proof needs more cases than the checker tries, the error says so
+rather than guessing.
+
+### In a package
+
+A refinement on an exposed function is part of its type. Asking less of an
+argument, or promising more in a result, is a minor change; asking more, or
+promising less, is a major one. Rewriting a condition so it means the same
+is a patch. `geng package diff`, `bump` and `validate` work this out.
+
+`geng make` in a package and `geng package validate` refuse a package whose
+conditions are not proved. An application checks every package it uses on
+every build.
+
+## Affine types: `Array.Builder` {#affine-types}
 
 An affine value can be *used* only once. Today that means one type,
-`Array.Builder`, and any type that holds one. Nothing else in Geng is affine:
-`Array`, `String`, `Dict`, records of them and so on are shared freely.
+`Array.Builder`, and any type that holds one. A builder writes into its
+buffer in place, and this rule is what makes that safe. Nothing else in Geng
+is affine: `Array`, `String`, `Dict`, records of them and so on are shared
+freely. (Geng may still write those in place when it can prove nothing else
+holds them, but that is an optimization, not a rule.)
 
-**Why.** Geng values never change, but a builder is the exception: it writes
-into its buffer in place, so building a large array is fast. That is only safe
-if nobody is still holding the old builder when it is written to. Go has
-exactly this problem with `append`:
-
-```go
-a := make([]int, 0, 10)
-b := append(a, 1)
-c := append(a, 2) // writes into the same buffer as b
-fmt.Println(b[0]) // prints 2, not 1
-```
-
-In C++ terms, a builder is like a `std::unique_ptr` or a moved-from
-`std::vector`: once you hand it on, the old name is dead. The difference is
-that C++ lets you use a moved-from object anyway, and Geng refuses to compile
-it.
+See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
+introduction.
 
 ### Looking and using
 
@@ -232,84 +274,20 @@ You may **look at** a builder as often as you like, until you **use** it.
 | passing it to a function that only looks | returning it |
 | | passing it to a function that marks it `moved` |
 
-A write gives back a builder, and that new one is what you use next. Think of
-each name as a ticket that can be spent once.
+A write gives back a new builder, and the next use must be of that one.
+`Builder.copy` only looks, and gives back a second builder with its own
+buffer.
 
-### Allowed
+| Refused | Compiles |
+|---|---|
+| `Builder.pushLast 2 b0` and `Builder.pushLast 3 b0` | `Builder.pushLast 2 (Builder.copy b0)` and `Builder.pushLast 3 b0` |
+| `Builder.length b` after `Builder.toArray b` | `Builder.length b` before `Builder.toArray b` |
+| `{ first = b, second = b }` | `{ first = Builder.copy b, second = b }` |
+| | one use of `b` in each branch of an `if` or a `when` |
 
-Each write goes to the builder the previous step gave back:
-
-```geng
-let
-    b0 = Builder.empty 3
-    b1 = Builder.pushLast 1 b0
-    b2 = Builder.pushLast 4 b1
-    b3 = Builder.pushLast 9 b2
-in
-Builder.toArray b3
-```
-
-Look first, then use:
-
-```geng
-let
-    n = Builder.length b
-    first = Builder.get 0 b
-in
-Builder.toArray (Builder.pushLast (n + Maybe.withDefault 0 first) b)
-```
-
-One use in each branch is fine, since only one branch runs:
-
-```geng
-if Builder.length b == 0 then
-    Builder.toArray (Builder.pushLast 1 b)
-
-else
-    Builder.toArray b
-```
-
-When you do want two, copy first. `Builder.copy` only looks at `b0`, and makes
-a second builder with its own buffer:
-
-```geng
-let
-    left = Builder.pushLast 2 (Builder.copy b0)
-    right = Builder.pushLast 3 b0
-in
-Array.append (Builder.toArray left) (Builder.toArray right)
-```
-
-### Refused
-
-Writing twice to the same builder. This is the Go `append` bug above:
-
-```geng
-let
-    left = Builder.pushLast 2 b0
-    right = Builder.pushLast 3 b0 -- error: b0 was already used
-in
-...
-```
-
-Looking after using. `toArray` took `b`, so its length is gone:
-
-```geng
-let
-    arr = Builder.toArray b
-in
-Array.pushLast (Builder.length b) arr -- error: b was already used
-```
-
-Storing it twice. Two copies of it would share one buffer:
-
-```geng
-{ first = b, second = b } -- error: b is used twice
-```
-
-Each of these is an `OWNERSHIP` error that points at both places and suggests
-a fix. See [When it is refused](@/docs/type-system.md#when-it-is-refused) for
-more.
+Each refused case is an `OWNERSHIP` error that points at both places and
+suggests a fix. See [When it is refused](@/docs/type-system.md#when-it-is-refused)
+for common cases.
 
 ### Order matters
 
@@ -342,15 +320,15 @@ countOf b =
 
 A caller can call `countOf b` and still use `b` afterwards, but not after
 `addOne b`. The signature must be honest: leaving out `moved` on `addOne` is an
-error, and so is writing it on `countOf`. This is the opposite of Rust, where
-an unmarked argument is moved and a borrow is marked with `&`. For C++, think
-of a plain argument as `const Builder&` and a `moved` one as `Builder&&`.
+error, and so is writing it on `countOf`.
 
 - `moved` goes on the arguments of a top-level or `let` signature. It cannot
   go on the result, on a callback's argument, or on a type that is not
   affine, including a type variable.
 - A function with no signature has its `moved` arguments worked out from its
   body.
+- Whether a function keeps a callback it is given, and whether its result
+  borrows from an argument, are always worked out from its body.
 
 ### Your own types
 
@@ -387,9 +365,17 @@ type Document
 - A generic function that keeps a value twice cannot be given a builder.
 - You never write any of the points in this list. The compiler works them
   out, and `geng docs` lists them for each function.
+- The rules are the same on every target: a program refused on one is
+  refused on all. On JavaScript and native targets a builder is a buffer
+  written in place; on the BEAM it is a persistent tree.
 
-See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
-introduction.
+### In a package
+
+What a function does with its arguments, whether written (`moved`,
+`@affine`) or worked out by the compiler, is part of its interface.
+`geng docs` lists it for each exposed function, and `geng package diff`
+compares it between versions. Each fact limits what a caller may do, so
+gaining one is a major change and losing one is minor.
 
 ## Classes and constraints
 
