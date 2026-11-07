@@ -1,5 +1,4 @@
 +++
-draft = true
 title = "4. Real programs"
 description = "How a pure program does I/O with Task, the finished expense report, and a mental model for performance."
 weight = 4

@@ -1,5 +1,4 @@
 +++
-draft = true
 title = "3. Modeling data"
 description = "Records instead of classes, custom types and when, Maybe and Result instead of None and exceptions, and modules instead of private fields."
 weight = 3

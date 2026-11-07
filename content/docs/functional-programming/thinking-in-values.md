@@ -1,5 +1,4 @@
 +++
-draft = true
 title = "1. Thinking in values"
 description = "Values that never change, functions with no hidden effects, and code made of expressions."
 weight = 1

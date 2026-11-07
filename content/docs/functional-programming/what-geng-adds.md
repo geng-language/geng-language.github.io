@@ -1,5 +1,4 @@
 +++
-draft = true
 title = "5. What Geng adds"
 description = "Checks moved from run time into the compiler, debugging and testing, and what you give up and get."
 weight = 5

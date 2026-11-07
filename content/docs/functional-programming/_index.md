@@ -1,6 +1,4 @@
 +++
-# Left out of the site until every part is written.
-draft = true
 title = "Functional programming for imperative programmers"
 description = "A walk from C, Go, Python or Rust to pure functional programming in Geng, in five parts."
 sort_by = "weight"

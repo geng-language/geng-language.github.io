@@ -1,5 +1,4 @@
 +++
-draft = true
 title = "2. Loops without loops"
 description = "map, filter and fold in place of for loops, state carried through a loop, and functions as values."
 weight = 2
