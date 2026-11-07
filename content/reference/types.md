@@ -217,6 +217,12 @@ Where a refined type is required, the compiler uses:
 
 - the tests on the way there, from an `if` or a `when` on a number. A test
   that joins a `Bool` and a comparison with `&&` keeps the comparison;
+- the patterns on the way there. A constructor pattern says which
+  constructor the value is, and what its arguments' patterns say of them; an
+  array pattern says the array's length (`[]` is 0, `[a, b]` is 2); a record
+  pattern says what its fields' patterns say, to any depth. A branch knows
+  that the patterns before it did not match. Matching one value twice gives
+  the same arguments both times;
 - the refinements on the enclosing function's arguments;
 - the promises in the results of functions called on the way. A promise
   holds only where its call was made: after
@@ -226,8 +232,9 @@ Where a refined type is required, the compiler uses:
   functions that call each other, or for facts that relate three values;
   those need a refinement written on them.
 
-It follows a value chosen by an `if`, whether a number, an array or a
-record (field by field), and understands `min`, `max` and `clamp`.
+It follows a value chosen by an `if`, whether a number, an array, a record
+(field by field) or a custom type (its constructor, and its `Int`
+arguments), and understands `min`, `max` and `clamp`.
 `f <| x` and `x |> f` are calls like `f x`. A record literal is checked with
 the values it was written with, and a record update with the fields it
 changed and the rest of the record it started from.

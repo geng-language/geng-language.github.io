@@ -527,6 +527,8 @@ At each call, the compiler uses what it knows at that point:
 
 - the tests on the way to the call, such as the `if` above (a `when` on a
   number works the same way);
+- the patterns on the way to the call: which constructor a value is, and
+  how long an array is;
 - the refinements on the calling function's own arguments;
 - the promises in the results of functions it has called;
 - facts it works out for itself about loops.
@@ -564,6 +566,29 @@ call was made: after `if b then below n else need n`, nothing `below`
 promised is known in the `else` branch. It treats the same sum written twice
 as two values, so test a sum once, give it a name with `let`, and use the
 name.
+
+Patterns count as tests. An array pattern says how long the array is, in
+its own branch and, because it did not match, in the branches after it. A
+constructor says which one the value is, and matching the same value twice
+gives the same contents both times:
+
+```geng
+second : Array Int -> Int
+second xs =
+    when xs is
+        [] ->
+            0
+
+        [ x ] ->
+            x
+
+        _ ->
+            Array.getProven 1 xs    -- xs is neither empty nor one long
+```
+
+A value built with a constructor, or chosen by an `if`, is matched as it was
+written, so a branch no value can reach owes nothing. When a call cannot be
+proved, the error lists what the compiler knows, such as `m is Just`.
 
 Full rules: [How a condition is proved](@/reference/types.md#how-a-condition-is-proved).
 
