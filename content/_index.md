@@ -46,7 +46,7 @@ the program does not compile. See
 
 ## Reliable everywhere
 
-One program, the same behaviour on every target.
+One program, the same behavior on every target.
 
 <div class="platforms">
 <table>

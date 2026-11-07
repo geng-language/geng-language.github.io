@@ -1,0 +1,5 @@
+{# One entry in a section's page list. Expects `item`: a page or a subsection. #}
+<li>
+  <a href="{{ item.permalink }}">{{ item.title }}</a>
+  {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+</li>

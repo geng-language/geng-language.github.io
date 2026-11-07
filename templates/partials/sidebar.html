@@ -1,20 +1,25 @@
-{# Expects `nav_section` to be set to the section whose pages are listed. #}
+{# Expects `nav_section` to be set to the section whose pages are listed.
+   A subsection is listed as a group just before the page its
+   `extra.sidebar_before` names (e.g. "docs/type-system.md"), or at the end
+   if it has none. A name that matches no page hides the group, so keep it
+   in step when pages are renamed. #}
 <nav class="sidebar" aria-label="{{ nav_section.title }}">
   <a class="sidebar-title" href="{{ nav_section.permalink }}">{{ nav_section.title }}</a>
   <ul>
     {% for p in nav_section.pages %}
+    {% for sub_path in nav_section.subsections %}
+    {% set sub = get_section(path=sub_path) %}
+    {% if sub.extra.sidebar_before is defined and sub.extra.sidebar_before == p.relative_path %}
+    {% include "partials/sidebar-group.html" %}
+    {% endif %}
+    {% endfor %}
     <li><a href="{{ p.permalink }}"{% if p.path == current_path %} aria-current="page"{% endif %}>{{ p.title }}</a></li>
     {% endfor %}
     {% for sub_path in nav_section.subsections %}
     {% set sub = get_section(path=sub_path) %}
-    <li class="sidebar-group">
-      <a href="{{ sub.permalink }}">{{ sub.title }}</a>
-      <ul>
-        {% for p in sub.pages %}
-        <li><a href="{{ p.permalink }}"{% if p.path == current_path %} aria-current="page"{% endif %}>{{ p.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </li>
+    {% if sub.extra.sidebar_before is not defined %}
+    {% include "partials/sidebar-group.html" %}
+    {% endif %}
     {% endfor %}
   </ul>
 </nav>

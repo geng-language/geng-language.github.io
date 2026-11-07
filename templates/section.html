@@ -3,19 +3,34 @@
 {% block title %}{{ section.title }} · {{ config.title }}{% endblock title %}
 
 {% block content %}
-{% set nav_section = section %}
+{# The top-level section (e.g. docs/) drives the sidebar, even for nested sections. #}
+{% set nav_section = get_section(path=section.ancestors[1]) if section.ancestors | length > 1 else section %}
 <div class="wrap docs-layout">
   {% include "partials/sidebar.html" %}
   <article class="prose">
     <h1>{{ section.title }}</h1>
     {{ section.content | safe }}
-    {% if section.pages %}
+    {% if section.pages or section.subsections %}
+    {# Subsections are placed as in the sidebar: before the page their
+       `extra.sidebar_before` names, or at the end. #}
     <ul class="page-list">
       {% for p in section.pages %}
-      <li>
-        <a href="{{ p.permalink }}">{{ p.title }}</a>
-        {% if p.description %}<p>{{ p.description }}</p>{% endif %}
-      </li>
+      {% for sub_path in section.subsections %}
+      {% set sub = get_section(path=sub_path) %}
+      {% if sub.extra.sidebar_before is defined and sub.extra.sidebar_before == p.relative_path %}
+      {% set item = sub %}
+      {% include "partials/page-list-item.html" %}
+      {% endif %}
+      {% endfor %}
+      {% set item = p %}
+      {% include "partials/page-list-item.html" %}
+      {% endfor %}
+      {% for sub_path in section.subsections %}
+      {% set sub = get_section(path=sub_path) %}
+      {% if sub.extra.sidebar_before is not defined %}
+      {% set item = sub %}
+      {% include "partials/page-list-item.html" %}
+      {% endif %}
       {% endfor %}
     </ul>
     {% endif %}

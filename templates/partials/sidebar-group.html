@@ -1,0 +1,9 @@
+{# One subsection in the sidebar, with its pages. Expects `sub`. #}
+<li class="sidebar-group">
+  <a href="{{ sub.permalink }}"{% if sub.path == current_path %} aria-current="page"{% endif %}>{{ sub.title }}</a>
+  <ul>
+    {% for sp in sub.pages %}
+    <li><a href="{{ sp.permalink }}"{% if sp.path == current_path %} aria-current="page"{% endif %}>{{ sp.title }}</a></li>
+    {% endfor %}
+  </ul>
+</li>
