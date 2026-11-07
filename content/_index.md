@@ -3,58 +3,31 @@ title = "Geng"
 description = "Correct by construction. Reliable everywhere."
 +++
 
-## Why Geng?
+Geng is a small, pure functional language in the family of Elm and Gren. You
+describe your problem in types, and the compiler checks your program against
+them before it ever runs.
 
-Geng has two goals, and the tagline names them: programs that are
-**correct by construction**, and that run **reliably everywhere**.
+## Correct by construction
 
-### Correct by construction
+There is no `null`, no exception to forget, and no case left unhandled. If a
+Geng program compiles, those crashes cannot happen.
+[What can still go wrong?](@/docs/error-handling.md#what-can-still-go-wrong)
 
-There are two kinds of errors: those you expect, and those you never saw
-coming. Geng is a pure functional language that turns the second kind into
-the first.
+## Checked before it runs
 
-In Geng, your types describe your problem: what a value can be, what a
-function returns, and how it can fail. The compiler checks all of it. A
-missing case, a value that might not be there, an error nobody handles:
-each one is a compile error, not a crash in production. A Geng program that
-compiles has been checked far more thoroughly than one in Python, Go or C++.
-Your code can still have logic bugs, but it won't crash on a null, a missing
-case or an error nobody handled. What is left is a program running out of
-memory or stack, and the few crashes you write on purpose. See
-[What can still go wrong](@/docs/error-handling.md#what-can-still-go-wrong).
-
-That should not take a specialist. Richer type systems and formal
-verification tools can prove more, but they ask more of the programmer than
-most projects can afford. Geng comes from Gren and Elm, which keep the
-language small, so programs stay **simple** to read and write.
-[Refinement types](@/docs/type-system.md#refinement-types) let the compiler
-check rules about values too, such as "this index is inside the array", in
-the same plain style. The compiler proves them before the program runs, so
-they cost nothing at run time.
-
-Here is what that looks like:
+Many checks that other languages make while the program runs (is this index
+in range? is this list empty? is this value valid?) can be done by the Geng
+compiler. You write the rule in the type, check it once where the data comes
+in, and the compiler proves it holds everywhere else. Code past that check
+doesn't repeat it, doesn't slow down for it, and can't forget it.
 
 ```geng
-type Reading
-    = Celsius Float
-    | Fahrenheit Float
-
-toCelsius : Reading -> Float
-toCelsius reading =
-    when reading is
-        Celsius c ->
-            c
-
-        Fahrenheit f ->
-            (f - 32.0) * 5.0 / 9.0
-
--- The newest reading. The type says there is always at least one.
-latest : (readings : Array Reading where Array.length readings > 0) -> Float
+-- The type says there is always at least one reading.
+latest : (readings : Array Float where Array.length readings > 0) -> Float
 latest readings =
-    toCelsius (Array.getProven (Array.length readings - 1) readings)
+    Array.getProven (Array.length readings - 1) readings
 
-report : Array Reading -> String
+report : Array Float -> String
 report readings =
     if Array.length readings > 0 then
         "Now " ++ String.fromFloat (latest readings) ++ "°C"
@@ -63,18 +36,14 @@ report readings =
         "No readings yet"
 ```
 
-There is no `null` here and nothing to throw. `when` must handle every kind
-of `Reading`, or the program does not compile.
+`latest` reads the last element directly: no `Maybe`, no bounds check. The
+one check is in `report`, and the compiler sees it. Leave out the `if`, and
+the program does not compile. See
+[Refinement types](@/docs/type-system.md#refinement-types).
 
-The `where` in `latest`'s type is a refinement: `readings` cannot be empty.
-So `latest` reads the last element directly, with no `Maybe` and no check
-for a case that cannot happen. The check is in `report`, where it belongs,
-and the compiler sees it. Leave out the `if`, and the program does not
-compile.
+## Reliable everywhere
 
-### Reliable everywhere
-
-The same Geng program runs where you need it:
+One program, the same behaviour on every target.
 
 <div class="platforms">
 <table>
@@ -96,19 +65,18 @@ The same Geng program runs where you need it:
 <td><strong>JVM</strong></td>
 </tr>
 <tr>
-<td>native executables and libraries, for speed</td>
-<td>in the browser, or as a Node.js program</td>
-<td>for the browser, or anywhere that accepts WASM</td>
-<td>for extreme uptimes</td>
-<td>for interoperability</td>
+<td>for speed</td>
+<td>browser and Node.js</td>
+<td>anywhere WASM runs</td>
+<td>for extreme uptime</td>
+<td>for interop</td>
 </tr>
 </table>
 </div>
 
+See [Platforms and targets](@/docs/platforms.md).
 
-No platform is the main one with the others as ports. Every backend is
-tested against the same conformance suite, and numbers, strings and equality
-behave the same on all of them. Geng will always support every one of these
-platforms. See [Platforms and targets](@/docs/platforms.md).
+---
 
-Geng is not released yet. See [Status and roadmap](@/docs/status.md).
+[Get started](@/docs/getting-started.md) · Geng is not released yet; see
+[Status and roadmap](@/docs/status.md).
