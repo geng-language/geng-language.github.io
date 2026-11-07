@@ -52,24 +52,24 @@ One program, the same behaviour on every target.
 <td><span class="logo-tile os-cluster"><img src="/icons/linux.svg" alt="Linux"><img src="/icons/apple.svg" alt="macOS"><img src="/icons/windows.svg" alt="Windows"></span></td>
 -->
 <td><span class="logo-tile"><img src="/icons/linux.svg" alt="Linux" width="48" height="48"></span></td>
-<td><span class="logo-tile"><img src="/icons/javascript.svg" alt="" width="48" height="48"></span></td>
-<td><span class="logo-tile"><img src="/icons/wasm.svg" alt="" width="48" height="48"></span></td>
 <td><span class="logo-tile"><img src="/icons/erlang.svg" alt="" width="48" height="48"></span></td>
-<td><span class="logo-tile"><img src="/icons/java.svg" alt="" width="48" height="48"></span></td>
+<td><span class="logo-tile"><img src="/icons/javascript.svg" alt="" width="48" height="48"></span></td>
+<td class="soon"><span class="logo-tile"><img src="/icons/wasm.svg" alt="" width="48" height="48"></span></td>
+<td class="soon"><span class="logo-tile"><img src="/icons/java.svg" alt="" width="48" height="48"></span></td>
 </tr>
 <tr>
 <td><strong>Native</strong></td>
-<td><strong>JavaScript</strong></td>
-<td><strong>WebAssembly</strong></td>
 <td><strong>Erlang BEAM</strong></td>
-<td><strong>JVM</strong></td>
+<td><strong>JavaScript</strong></td>
+<td class="soon"><strong>WebAssembly</strong><span class="soon-badge">Coming soon</span></td>
+<td class="soon"><strong>JVM</strong><span class="soon-badge">Coming soon</span></td>
 </tr>
 <tr>
 <td>for speed</td>
-<td>browser and Node.js</td>
-<td>anywhere WASM runs</td>
 <td>for extreme uptime</td>
-<td>for interop</td>
+<td>browser and Node.js</td>
+<td class="soon">anywhere WASM runs</td>
+<td class="soon">for interop</td>
 </tr>
 </table>
 </div>
