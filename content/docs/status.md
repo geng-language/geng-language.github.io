@@ -81,8 +81,7 @@ the public release, so there is no standard library documentation yet.
   type alias cannot take a value as a parameter. Only `Int`s, a record's
   `Int` fields and a few sizes can be refined. The next steps are facts
   about custom types, `modBy`, and refinements inside type arguments.
-- **Affine types.** `Builder.length` cannot yet be read in a refinement
-  outside `core`, an `@affine` type cannot have `@derive(…)`, and whether
+- **Affine types.** An `@affine` type cannot have `@derive(…)`, and whether
   `Array.map` should hand each builder on instead of lending it is still
   open.
 - **Class declarations.** Only `core` can declare classes and instances

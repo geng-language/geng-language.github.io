@@ -199,8 +199,8 @@ compiler could not see its calls. Pass a lambda that calls it instead:
 
 - A condition holds integer literals, the signature's names and their
   fields (`m.index`, `o.move.index`), the measures `Array.length`,
-  `Bytes.length`, `String.count`, `Dict.count` and `Set.count` of a name or a
-  field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
+  `Bytes.length`, `Bytes.Owned.length`, `String.count`, `Dict.count`,
+  `Set.count` and `Array.Builder.length` of a name or a field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
   `&&`, `||`, `not`, `True` and `False`. A name or field read directly must
   be an `Int`.
 - Nothing else: no calls to other functions, no records built in a
@@ -352,6 +352,33 @@ type Document
 
 `@affine` cannot go on a type alias, and an `@affine` type cannot also have
 `@derive(…)`.
+
+### A builder's length {#a-builders-length}
+
+`Builder.length` is a measure, so a condition may name it, and
+`Builder.getProven` reads an element with no `Maybe`:
+
+```geng
+getProven : (i : Int where 0 <= i && i < Array.Builder.length builder) -> (builder : Builder a) -> a
+```
+
+Each function in `Array.Builder` promises the length of the builder it
+returns:
+
+| Function | Length of the result |
+|---|---|
+| `empty n` | 0 (`n` is only the room set aside) |
+| `repeat n x` | `n`, or 0 when `n <= 0` |
+| `fromArray a` | `Array.length a` |
+| `pushLast x b` | one more than `b` |
+| `append a b` | `b`'s plus `Array.length a` |
+| `set`, `update`, `fill`, `copyWithin`, `moveWithin`, `rotate` | the same as `b` |
+| `swap` | the same as `b`, in the result's `builder` field |
+| `toArray b` | the array's `Array.length` is `b`'s |
+
+Reading the length is looking, so it must come before the builder is used:
+to state the length of what `toArray` returned, name `Builder.length b`
+before the call.
 
 ### Fine print
 

@@ -358,8 +358,8 @@ A condition is deliberately small. It can contain:
   result's own name, in the result's condition);
 - a record's fields, to any depth: `m.index`, `o.move.index`;
 - a few *measures* applied to an argument or a field, such as
-  `Array.length`, `Bytes.length`, `String.count`, `Dict.count` and
-  `Set.count`: `Array.length m.items`;
+  `Array.length`, `Bytes.length`, `String.count`, `Dict.count`,
+  `Set.count` and a builder's `Builder.length`: `Array.length m.items`;
 - `+`, `-`, and `*` with a literal on one side;
 - `<`, `<=`, `>`, `>=`, `==` and `/=`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
@@ -980,6 +980,58 @@ Other common fixes:
 | `get` a row of a builder of builders, change it, and `set` it back | `Builder.update`, which hands the row to your function and puts back what it returns |
 
 Full rules: [Affine types](@/reference/types.md#affine-types).
+
+### Reading a builder without a `Maybe`
+
+`Builder.get` returns a `Maybe`, as `Array.get` does. Where the compiler can
+prove the index is in range, `Builder.getProven` returns the element itself,
+and `Builder.length` can be named in a [refinement](#refinement-types):
+
+```geng
+tested : Int -> Builder Int -> Int
+tested i b =
+    if i >= Builder.length b || i < 0 then
+        -1
+
+    else
+        Builder.getProven i b
+```
+
+`Builder`'s functions promise what they do to the length, so a read after
+them needs no test: `empty` starts at 0, `pushLast` adds one, `append` adds
+the array's length, `set`, `update` and `rotate` keep it, and the array
+`toArray` returns is as long as the builder was.
+
+```geng
+pushed : Int
+pushed =
+    let
+        b =
+            Builder.empty 4
+                |> Builder.pushLast 10
+                |> Builder.pushLast 20
+    in
+    Builder.getProven 1 b
+```
+
+A record can state a rule about its builder field, like any other field:
+
+```geng
+type alias Screen =
+    { cells : Builder Int
+    , cols : Int where 1 <= cols && cols <= Builder.length cells
+    }
+
+
+lastCol : Screen -> Int
+lastCol s =
+    Builder.getProven (s.cols - 1) s.cells
+```
+
+Looking at the length is looking, not using, so it follows the same order
+rules as any other look: read it before the builder is used.
+
+Full rules: [A builder's length](@/reference/types.md#a-builders-length).
 
 ### In a package
 
