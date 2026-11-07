@@ -6,13 +6,17 @@ description = "Correct by construction. Reliable everywhere."
 Speed is easy to measure. Correctness is harder, and it matters more: a fast
 program you can't trust is no use. Geng is a small, pure functional language
 that moves as much checking as it can into the compiler, so a program is
-checked before it runs, not while it does. That matters more now that LLMs
-write much of our code. The compiler holds a model's work to the same
-standard as anyone's.
+checked before it runs, not *while* it runs. That matters more now that
+LLMs write much of our code.
+
+Geng started as a fork of [Gren](https://gren-lang.org), which is itself a
+fork of [Elm](https://elm-lang.org). We thank everyone who has contributed
+to those languages: without them, we would not have had such a strong
+foundation.
 
 ## Correct by construction
 
-There is no `null`, no exception to forget, and no case left unhandled. If a
+There is no `null` pointer, no exception to forget, and no case left unhandled. If a
 Geng program compiles, those crashes cannot happen.
 [What can still go wrong?](@/docs/error-handling.md#what-can-still-go-wrong)
 
@@ -41,7 +45,8 @@ report readings =
 
 `latest` reads the last element directly: no `Maybe`, no bounds check. The
 one check is in `report`, and the compiler sees it. Leave out the `if`, and
-the program does not compile. See
+the program does not compile. Yes, you can assert this at run time in any
+language, but Geng enforces it at **compile time**. See
 [Refinement types](@/docs/type-system.md#refinement-types).
 
 ## Reliable everywhere
