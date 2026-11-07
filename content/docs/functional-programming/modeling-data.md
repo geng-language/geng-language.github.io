@@ -335,7 +335,7 @@ parseCents text =
                 |> Result.fromMaybe problem
 
         [ dollars, cents ] ->
-            if String.length cents == 2 then
+            if String.count cents == 2 then
                 String.toInt (dollars ++ cents)
                     |> Result.fromMaybe problem
 

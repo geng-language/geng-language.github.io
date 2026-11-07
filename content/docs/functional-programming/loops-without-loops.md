@@ -91,9 +91,8 @@ food =
 ```
 
 The function returns a `Bool`, and `keepIf` keeps the items it returns
-`True` for. Its opposite, `Array.dropIf`, drops them. (In many languages this
-is called `filter`. Gren, which Geng comes from, chose names that say which
-way round the test goes.)
+`True` for. (In many languages this is called `filter`. Gren, which Geng
+comes from, chose a name that says which way round the test goes.)
 
 ## Combining everything: `fold`
 
@@ -211,7 +210,7 @@ addToCategory e totals =
             Dict.get e.category totals
                 |> Maybe.withDefault 0
     in
-    Dict.insert e.category (before + e.cents) totals
+    Dict.set e.category (before + e.cents) totals
 ```
 
 `Dict.get` might not find the key, so it returns a `Maybe Int` rather than an
@@ -219,7 +218,7 @@ addToCategory e totals =
 part of Python's `totals.get(e.category, 0)`. `Maybe` is covered properly in
 [Part 3](@/docs/functional-programming/modeling-data.md).
 
-`Dict.insert` doesn't change `totals`. It returns a new dictionary with the
+`Dict.set` doesn't change `totals`. It returns a new dictionary with the
 key set, which the fold passes to the next step.
 
 ## When a fold doesn't fit: recursion
@@ -333,7 +332,7 @@ way.
 ### Why the data comes last
 
 This is why Geng's own functions take the thing they work on as the *last*
-argument: `Array.map f array`, `Dict.insert key value dict`,
+argument: `Array.map f array`, `Dict.set key value dict`,
 `String.split separator text`. The arguments that set up the job come first,
 so you can fill them in and get back a function that is waiting for the data.
 

@@ -207,7 +207,7 @@ readTextFile : String -> Task String String
 ```
 
 which succeeds with the file's text or fails with a message. In a real
-program it is a line or two over the file API of the platform you build for.
+program it is a few lines over the file API of the platform you build for.
 Everything else on this page is the same on every platform.
 
 ### The same program in Python

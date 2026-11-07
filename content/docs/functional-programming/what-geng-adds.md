@@ -114,7 +114,7 @@ adds 1. Nothing about the loop had to be written down for it.
 
 Refinements are deliberately small. A condition can compare whole numbers,
 do simple arithmetic, and talk about sizes such as `Array.length` and
-`String.length`. It can't decide whether a string is a valid email address,
+`String.count`. It can't decide whether a string is a valid email address,
 or whether a key is in a `Dict`; the module pattern from
 [Part 3](@/docs/functional-programming/modeling-data.md#modules-instead-of-private-fields)
 is still the tool for those. And data from outside, such as the lines of a
