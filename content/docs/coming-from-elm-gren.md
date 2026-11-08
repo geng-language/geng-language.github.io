@@ -161,6 +161,10 @@ is for development builds only.
 
 This is the largest change for application code.
 
+{% <pure_boundary> %}
+The pure space is the same as in Elm and Gren; the doors are different. Ports, `Cmd` and `Sub` are gone. Tasks call host code through `@extern`, and events come in through a `Source`.
+{% </pure_boundary> %}
+
 - **`main : Task Never {}`** is the only kind of `main`, on every platform.
   There is no `Node.defineProgram`, no `Init`, no `update` loop that the
   runtime drives. The program runs `main` and ends when it finishes.

@@ -8,6 +8,10 @@ Geng code reaches its host platform through `@extern` declarations. The
 declaration is ordinary Geng with a real type. The implementation is an
 ordinary file in the host's language.
 
+{% <pure_boundary> %}
+A Geng program is one pure space, and effects happen outside it. Tasks reach out through `@extern` declarations, which call code in the host language and bring the result back. Events come in through a [`Source`](@/docs/coming-from-elm-gren.md#programs-and-effects), a mailbox the outside world puts messages into.
+{% </pure_boundary> %}
+
 ## Declaring an extern
 
 ```geng
