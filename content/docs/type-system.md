@@ -360,8 +360,10 @@ A condition is deliberately small. It can contain:
 - a few *measures* applied to an argument or a field, such as
   `Array.length`, `Bytes.length`, `String.count`, `Dict.count`,
   `Set.count` and a builder's `Builder.length`: `Array.length m.items`;
+- `Maybe.isJust` and `Result.isOk`, which say which constructor a value is;
 - `+`, `-`, and `*` with a literal on one side;
-- `<`, `<=`, `>`, `>=`, `==` and `/=`;
+- `<`, `<=`, `>`, `>=`, `==` and `/=` between numbers, and `==` and `/=`
+  between two conditions: `Maybe.isJust r == (Array.length a > 0)`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
 
 Nothing else: no calls to your own functions, no records built in a
@@ -527,6 +529,8 @@ At each call, the compiler uses what it knows at that point:
 
 - the tests on the way to the call, such as the `if` above (a `when` on a
   number works the same way);
+- the patterns on the way to the call: which constructor a value is, and
+  how long an array is;
 - the refinements on the calling function's own arguments;
 - the promises in the results of functions it has called;
 - facts it works out for itself about loops.
@@ -565,6 +569,29 @@ promised is known in the `else` branch. It treats the same sum written twice
 as two values, so test a sum once, give it a name with `let`, and use the
 name.
 
+Patterns count as tests. An array pattern says how long the array is, in
+its own branch and, because it did not match, in the branches after it. A
+constructor says which one the value is, and matching the same value twice
+gives the same contents both times:
+
+```geng
+second : Array Int -> Int
+second xs =
+    when xs is
+        [] ->
+            0
+
+        [ x ] ->
+            x
+
+        _ ->
+            Array.getProven 1 xs    -- xs is neither empty nor one long
+```
+
+A value built with a constructor, or chosen by an `if`, is matched as it was
+written, so a branch no value can reach owes nothing. When a call cannot be
+proved, the error lists what the compiler knows, such as `m is Just`.
+
 Full rules: [How a condition is proved](@/reference/types.md#how-a-condition-is-proved).
 
 ### Refinements in `core`
@@ -589,7 +616,18 @@ read after them can be proved without any test:
 - `pushFirst` and `pushLast` return one that is one longer;
 - `prepend` and `append` return one as long as both together;
 - `indexedMap`, `indexedFoldl` and `indexedFoldr` give their function an index
-  inside the array.
+  inside the array;
+- `first`, `last`, `popFirst`, `popLast`, `minimum` and `maximum` return a
+  `Just` exactly when the array is not empty, and `get` exactly when the index
+  is inside it (counting a negative one from the end), as `Bytes.get` does
+  for bytes:
+
+```geng
+Array.first : (array : Array a) -> (r : Maybe a where Maybe.isJust r == (Array.length array > 0))
+```
+
+So a `Just` from `Array.first a` says `a` is not empty, and when the compiler
+already knows `a` is not empty, the `Nothing` branch owes nothing.
 
 So this compiles, with no `Maybe` and no test:
 

@@ -79,8 +79,11 @@ the public release, so there is no standard library documentation yet.
   whole record; such a record cannot yet be a field of another type alias or
   sit inside a `Maybe`, an `Array` or a custom type, and a refined
   type alias cannot take a value as a parameter. Only `Int`s, a record's
-  `Int` fields and a few sizes can be refined. The next steps are facts
-  about custom types, `modBy`, and refinements inside type arguments.
+  `Int` fields and a few sizes can be refined. Patterns are facts, and a
+  condition can say whether a `Maybe` is a `Just` (`Maybe.isJust`), but a
+  variant's argument cannot be refined, and a program cannot define measures
+  of its own (`@measure`); those come next, then `modBy` and refinements
+  inside type arguments.
 - **Affine types.** An `@affine` type cannot have `@derive(…)`, and whether
   `Array.map` should hand each builder on instead of lending it is still
   open.

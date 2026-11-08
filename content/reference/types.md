@@ -200,9 +200,11 @@ compiler could not see its calls. Pass a lambda that calls it instead:
 - A condition holds integer literals, the signature's names and their
   fields (`m.index`, `o.move.index`), the measures `Array.length`,
   `Bytes.length`, `Bytes.Owned.length`, `String.count`, `Dict.count`,
-  `Set.count` and `Array.Builder.length` of a name or a field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
-  `&&`, `||`, `not`, `True` and `False`. A name or field read directly must
-  be an `Int`.
+  `Set.count` and `Array.Builder.length` of a name or a field, the
+  measures `Maybe.isJust` and `Result.isOk`, which are conditions, `+`,
+  `-`, `*` with a literal on one side, the six comparisons between numbers,
+  `==` and `/=` between two conditions, and `&&`, `||`, `not`, `True` and
+  `False`. A name or field read directly must be an `Int`.
 - Nothing else: no calls to other functions, no records built in a
   condition, and no floats. Anything else is a `BAD REFINEMENT` error.
 - A condition's arithmetic is exact. The program's own `Int` arithmetic still
@@ -217,6 +219,12 @@ Where a refined type is required, the compiler uses:
 
 - the tests on the way there, from an `if` or a `when` on a number. A test
   that joins a `Bool` and a comparison with `&&` keeps the comparison;
+- the patterns on the way there. A constructor pattern says which
+  constructor the value is, and what its arguments' patterns say of them; an
+  array pattern says the array's length (`[]` is 0, `[a, b]` is 2); a record
+  pattern says what its fields' patterns say, to any depth. A branch knows
+  that the patterns before it did not match. Matching one value twice gives
+  the same arguments both times;
 - the refinements on the enclosing function's arguments;
 - the promises in the results of functions called on the way. A promise
   holds only where its call was made: after
@@ -226,8 +234,9 @@ Where a refined type is required, the compiler uses:
   functions that call each other, or for facts that relate three values;
   those need a refinement written on them.
 
-It follows a value chosen by an `if`, whether a number, an array or a
-record (field by field), and understands `min`, `max` and `clamp`.
+It follows a value chosen by an `if`, whether a number, an array, a record
+(field by field) or a custom type (its constructor, and its `Int`
+arguments), and understands `min`, `max` and `clamp`.
 `f <| x` and `x |> f` are calls like `f x`. A record literal is checked with
 the values it was written with, and a record update with the fields it
 changed and the rest of the record it started from.
