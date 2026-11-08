@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+{#- The text before the first heading sits on a patterned band; the rest follows as usual. -#}
+{% set intro = section.content | split(pat="<h2") | first %}
+<div class="home-band">
+  <section class="wrap prose home home-intro">
+    {{ intro | safe }}
+  </section>
+</div>
 <section class="wrap prose home">
-  {{ section.content | safe }}
+  {{ section.content | replace(from=intro, to="") | safe }}
 </section>
 {% endblock content %}
