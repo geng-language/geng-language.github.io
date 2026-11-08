@@ -12,7 +12,7 @@ description = "Correct by construction. Reliable everywhere."
 Speed is easy to measure. Correctness is harder, and it matters more: a fast
 program you can't trust is no use. Geng is a small, pure functional language
 that moves as much checking as it can into the compiler, so a program is
-checked *before* it runs, not *while* it runs. That matters more now that
+checked *before* it runs, not *while* it runs. That matters even more now that
 LLMs write much of our code.
 
 ## Correct by construction
