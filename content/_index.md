@@ -108,10 +108,10 @@ One program, the same behavior on every target.
 <div class="platforms">
 <table>
 <tr>
-<!-- Only Linux works today. When macOS and Windows land, restore the cluster:
+<!-- Geng ships with Linux and Windows toolchains. When macOS lands, add it:
 <td><span class="logo-tile os-cluster"><img src="/icons/linux.svg" alt="Linux"><img src="/icons/apple.svg" alt="macOS"><img src="/icons/windows.svg" alt="Windows"></span></td>
 -->
-<td><span class="logo-tile"><img src="/icons/linux.svg" alt="Linux" width="48" height="48"></span></td>
+<td><span class="logo-tile os-cluster os-pair"><img class="tux" src="/icons/linux-tight.svg" alt="Linux"><img src="/icons/windows.svg" alt="Windows"></span></td>
 <td><span class="logo-tile"><img src="/icons/erlang.svg" alt="" width="48" height="48"></span></td>
 <td><span class="logo-tile"><img src="/icons/javascript.svg" alt="" width="48" height="48"></span></td>
 <td class="soon"><span class="logo-tile"><img src="/icons/wasm.svg" alt="" width="48" height="48"></span></td>

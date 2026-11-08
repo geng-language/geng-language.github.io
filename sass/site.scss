@@ -312,6 +312,14 @@ a { color: var(--accent); }
   img { width: 22px; height: 22px; }
 }
 
+/* Two of them, Linux and Windows, larger. Tux's icon is cut to its drawing
+   (linux-tight.svg), so the two sit the same distance from the tile's edges. */
+.os-pair {
+  gap: 6px;
+  img { width: 30px; height: 30px; }
+  img.tux { width: 26px; }
+}
+
 /* Docs layout */
 
 .docs-layout {
