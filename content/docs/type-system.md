@@ -361,12 +361,14 @@ A condition is deliberately small. It can contain:
   `Array.length`, `Bytes.length`, `String.count`, `Dict.count`,
   `Set.count` and a builder's `Builder.length`: `Array.length m.items`;
 - `Maybe.isJust` and `Result.isOk`, which say which constructor a value is;
+- a [measure of your own](#measures-of-your-own), a function declared
+  `@measure`: `isEmpty s`;
 - `+`, `-`, and `*` with a literal on one side;
 - `<`, `<=`, `>`, `>=`, `==` and `/=` between numbers, and `==` and `/=`
   between two conditions: `Maybe.isJust r == (Array.length a > 0)`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
 
-Nothing else: no calls to your own functions, no records built in a
+Nothing else: no calls to your own functions that are not measures, no records built in a
 condition, and no floats. A condition outside this list is a
 `BAD REFINEMENT` error. The arithmetic in a
 condition is exact, because it is never run: `at + 4 <= Bytes.length b` means
@@ -477,15 +479,60 @@ The rule then applies to that field:
 split : Move -> { move : Move, rest : Int }
 ```
 
+A `Move`, or a record with a condition on a field, can also be a variant's
+whole argument: `type Path = Path { bytes : Bytes, sep : Int where 0 <= sep
+&& sep <= Bytes.length bytes }`. The constructor then asks its argument's
+rule wherever it is applied, and a `when` that matches it knows the rule.
+
 Anywhere else, a `Move` cannot go yet: not as a field of another type alias,
-and not inside a `Maybe`, an `Array` or a custom type's constructor. The same
-goes for a record with a condition on a field, and an extensible record,
-`{ r | index : Int }`, cannot have one. So an application's model cannot
-hold a `Move` for now, and a record wrapped in a custom type, such as
-`type Path = Path { ... }`, cannot carry a rule.
+and not inside a `Maybe` or an `Array`. An extensible record, `{ r | index :
+Int }`, cannot have one. So an application's model cannot hold a `Move` for
+now.
 
 Full rules: [Type aliases](@/reference/types.md#type-aliases) and
 [Where a refinement goes](@/reference/types.md#where-a-refinement-goes).
+
+### Measures of your own
+
+A condition can call a function of your own if you declare it `@measure`. A
+measure says something about each constructor of a custom type, and the
+compiler reads it wherever the type is matched:
+
+```geng
+type Shape
+    = Circle Int
+    | Square Int
+    | Empty
+
+
+@measure
+isEmpty : Shape -> Bool
+isEmpty s =
+    when s is
+        Empty ->
+            True
+
+        _ ->
+            False
+
+
+side : (s : Shape where not (isEmpty s)) -> Int
+```
+
+`side (Circle 3)` compiles, and so does `side s` after a `when` or an
+`if isEmpty s` has ruled out `Empty`. `side s` with nothing known of `s` is a
+`CANNOT SHOW A REFINEMENT` error that says what it needs: `s is not Empty`. A
+measure that answers an `Int`, such as the number of corners a shape has,
+works the same way, and so does one that reads a record's field, such as
+`b.used`.
+
+A measure takes one argument of a type declared in the same module, answers
+an `Int` or a `Bool`, and its body is a `when` over that argument whose
+branches are conditions' terms, or one such term. It cannot call itself yet,
+so a tree's size is not a measure for now. A rule broken is a `NOT A
+MEASURE` error naming it.
+
+Full rules: [Measures](@/reference/types.md#measures).
 
 ### Things that are almost refinement types
 
