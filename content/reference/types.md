@@ -200,9 +200,11 @@ compiler could not see its calls. Pass a lambda that calls it instead:
 - A condition holds integer literals, the signature's names and their
   fields (`m.index`, `o.move.index`), the measures `Array.length`,
   `Bytes.length`, `Bytes.Owned.length`, `String.count`, `Dict.count`,
-  `Set.count` and `Array.Builder.length` of a name or a field, `+`, `-`, `*` with a literal on one side, the six comparisons, and
-  `&&`, `||`, `not`, `True` and `False`. A name or field read directly must
-  be an `Int`.
+  `Set.count` and `Array.Builder.length` of a name or a field, the
+  measures `Maybe.isJust` and `Result.isOk`, which are conditions, `+`,
+  `-`, `*` with a literal on one side, the six comparisons between numbers,
+  `==` and `/=` between two conditions, and `&&`, `||`, `not`, `True` and
+  `False`. A name or field read directly must be an `Int`.
 - Nothing else: no calls to other functions, no records built in a
   condition, and no floats. Anything else is a `BAD REFINEMENT` error.
 - A condition's arithmetic is exact. The program's own `Int` arithmetic still

@@ -360,8 +360,10 @@ A condition is deliberately small. It can contain:
 - a few *measures* applied to an argument or a field, such as
   `Array.length`, `Bytes.length`, `String.count`, `Dict.count`,
   `Set.count` and a builder's `Builder.length`: `Array.length m.items`;
+- `Maybe.isJust` and `Result.isOk`, which say which constructor a value is;
 - `+`, `-`, and `*` with a literal on one side;
-- `<`, `<=`, `>`, `>=`, `==` and `/=`;
+- `<`, `<=`, `>`, `>=`, `==` and `/=` between numbers, and `==` and `/=`
+  between two conditions: `Maybe.isJust r == (Array.length a > 0)`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
 
 Nothing else: no calls to your own functions, no records built in a
@@ -614,7 +616,18 @@ read after them can be proved without any test:
 - `pushFirst` and `pushLast` return one that is one longer;
 - `prepend` and `append` return one as long as both together;
 - `indexedMap`, `indexedFoldl` and `indexedFoldr` give their function an index
-  inside the array.
+  inside the array;
+- `first`, `last`, `popFirst`, `popLast`, `minimum` and `maximum` return a
+  `Just` exactly when the array is not empty, and `get` exactly when the index
+  is inside it (counting a negative one from the end), as `Bytes.get` does
+  for bytes:
+
+```geng
+Array.first : (array : Array a) -> (r : Maybe a where Maybe.isJust r == (Array.length array > 0))
+```
+
+So a `Just` from `Array.first a` says `a` is not empty, and when the compiler
+already knows `a` is not empty, the `Nothing` branch owes nothing.
 
 So this compiles, with no `Maybe` and no test:
 
