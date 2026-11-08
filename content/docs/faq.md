@@ -45,6 +45,7 @@ backend.
 ### What does "Geng" mean?
 
 It is the Thai word เก่ง, which means "skilled" or "capable".
+The G is hard, as in "Go", not soft, as in "Java".
 
 ### Is it ready for production?
 
