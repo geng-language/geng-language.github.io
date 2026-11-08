@@ -1,6 +1,6 @@
 # Overridden at deploy time by the Pages workflow, so a custom domain
 # only needs to be configured in the repo's Pages settings.
-base_url = "https://geng-language.github.io"
+base_url = "https://geng-lang.org"
 title = "Geng"
 description = "The Geng programming language"
 default_language = "en"
