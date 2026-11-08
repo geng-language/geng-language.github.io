@@ -11,8 +11,9 @@ description = "Correct by construction. Reliable everywhere."
 
 Speed is easy to measure. Correctness is harder, and it matters more: a fast
 program you can't trust is no use. Geng is a small, pure functional language
-that moves as much checking as it can into the compiler, so a program is
-checked *before* it runs, not *while* it runs. That matters even more now that
+that moves many of the checks other languages make at run time into the
+compiler, so more of a program is checked *before* it runs, not *while* it
+runs. That matters even more now that
 LLMs write much of our code.
 
 ## Correct by construction
@@ -51,6 +52,30 @@ one check is in `report`, and the compiler sees it. Leave out the `if`, and
 the program does not compile. Yes, you can assert this at run time in any
 language, but Geng enforces it at **compile time**. See
 [Refinement types](@/docs/type-system.md#refinement-types).
+
+## Runtime asserts, moved to compile time
+
+Geng is not a proof assistant like Lean or Coq. You don't write proofs, and
+the compiler doesn't claim your program does what you meant. Its job is
+narrower, and it does it without being asked: the conditions other languages
+check with an assert while the program runs become part of a function's type,
+and every call is checked against them before the program is built. Is this
+index in range? Is this array empty? Is this number between 0 and 100? Can this sum
+overflow? It reasons about whole numbers (lengths, indexes, counts and
+ranges), and when it can't show a rule holds, the program doesn't build. The
+error names the rule, the facts the compiler had, and values that would break
+it.
+
+## A report for you, and for your LLM
+
+Code an LLM writes compiles, reads well, and can still hide a
+`Maybe.withDefault 0` that has a code smell. The checks report (coming soon) lists
+what the compiler proved, function by function. It also lists every fallback
+in the program, a `Nothing` branch or a default value, and says which ones
+can never run and which ones can. You can see where the program relies on a
+proof and where it relies on a fallback, without reading every line. The same
+report is something the LLM can act on: turn a reachable fallback into a rule
+the compiler checks, build again, and watch the count go down.
 
 ## Reliable everywhere
 
