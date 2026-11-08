@@ -64,6 +64,15 @@
   --header-muted: #9ccfb6;
   --band-bg: #e4f0e9;
   --band-line: rgba(11, 122, 83, 0.2);
+  /* The checks report's outcomes, as its HTML page colours them. */
+  --ok: #23734a;
+  --ok-bg: #e3f3ea;
+  --warn: #9a5b00;
+  --warn-bg: #fdf1dc;
+  --bad: #b0281f;
+  --bad-bg: #fbe5e2;
+  --info: #2a5aa8;
+  --info-bg: #e5edfa;
   --font-display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -84,6 +93,14 @@
   --header-muted: #8fc7ac;
   --band-bg: #11211a;
   --band-line: rgba(77, 212, 160, 0.14);
+  --ok: #6fcf97;
+  --ok-bg: #173225;
+  --warn: #f0b75a;
+  --warn-bg: #3a2c12;
+  --bad: #f08b80;
+  --bad-bg: #3d1d1a;
+  --info: #8db4f5;
+  --info-bg: #1b2a44;
 }
 
 /* Follow the system unless the visitor picked a mode with the header switch
@@ -443,4 +460,80 @@ a { color: var(--accent); }
   .d-door { fill: var(--accent); }
   .d-line { stroke: var(--muted); stroke-width: 2; }
   .d-arrowhead { fill: var(--muted); }
+}
+
+/* An excerpt of the checks report on the home page. */
+.checks {
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--code-bg);
+  overflow: hidden;
+  font-size: 0.92rem;
+  code,
+  :not(pre) > code { background: none; border: none; padding: 0; font-size: 0.95em; }
+  .checks-what code { color: var(--accent); white-space: nowrap; }
+}
+.checks-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--header-bg);
+  color: var(--header-fg);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.checks-scope { color: var(--header-muted); }
+.checks-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem 0.2rem;
+}
+.checks-total {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  b { font-family: var(--font-display); font-size: 1.05rem; margin-right: 0.2rem; }
+  &.held { background: var(--info-bg); color: var(--info); }
+  &.never { background: var(--ok-bg); color: var(--ok); }
+  &.reach { background: var(--warn-bg); color: var(--warn); }
+  &.open { background: var(--bad-bg); color: var(--bad); }
+}
+.checks-module {
+  padding: 0.8rem 1rem 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.checks-row {
+  display: grid;
+  grid-template-columns: 7.5rem 4.5rem 3.5rem 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-top: 1px solid var(--border);
+  .chip {
+    justify-self: start;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    &.held { background: var(--info-bg); color: var(--info); }
+    &.never { background: var(--ok-bg); color: var(--ok); }
+    &.reach { background: var(--warn-bg); color: var(--warn); }
+    &.open { background: var(--bad-bg); color: var(--bad); }
+  }
+}
+.checks-module + .checks-row { border-top: none; }
+.checks-def { font-weight: 600; }
+.checks-line { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.checks-what { color: var(--fg); }
+.checks-row:last-child { padding-bottom: 0.8rem; }
+@media (max-width: 40rem) {
+  .checks-row { grid-template-columns: auto auto 1fr; }
+  .checks-what { grid-column: 1 / -1; }
 }

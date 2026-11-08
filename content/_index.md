@@ -22,13 +22,15 @@ There is no `NULL` pointer, no exception to forget, and no case left unhandled. 
 Geng program compiles, those crashes cannot happen.
 [What can still go wrong?](@/docs/error-handling.md#what-can-still-go-wrong)
 
-## Checked before it runs
+## Runtime asserts, moved to compile time
 
-Many checks that other languages make while the program runs (is this index
-in range? is this list empty? is this value valid?) can be done by the Geng
-compiler **at compile time**. You write the rule in the type, check it once where the data comes
-in, and the compiler proves it holds everywhere else. Code past that check
-doesn't repeat it, doesn't slow down for it, and can't forget it.
+Other languages check many things with an assert while the program runs: is
+this index in range? is this array empty? is this number between 0 and 100?
+can this sum overflow? In Geng these rules go in a function's type, and the
+compiler checks every call against them before the program is built. You
+check once where the data comes in, and the compiler proves the rule holds
+everywhere after that. Code past that point doesn't repeat the check, doesn't
+slow down for it, and can't forget it.
 
 ```geng
 -- The type says there is always at least one reading.
@@ -49,22 +51,18 @@ The `latest` function takes an `Array Float`, but not just any `Array Float`:
 only one that the compiler can prove has a length greater than zero. So
 `latest` reads the last element directly: no `Maybe`, no bounds check. The
 one check is in `report`, and the compiler sees it. Leave out the `if`, and
-the program does not compile. Yes, you can assert this at run time in any
-language, but Geng enforces it at **compile time**. See
+the program does not compile: the error names the rule, the facts the
+compiler had, and values that would break it. See
 [Refinement types](@/docs/type-system.md#refinement-types).
 
-## Runtime asserts, moved to compile time
-
 Geng is not a proof assistant like Lean or Coq. You don't write proofs, and
-the compiler doesn't claim your program does what you meant. Its job is
-narrower, and it does it without being asked: the conditions other languages
-check with an assert while the program runs become part of a function's type,
-and every call is checked against them before the program is built. Is this
-index in range? Is this array empty? Is this number between 0 and 100? Can this sum
-overflow? It reasons about whole numbers (lengths, indexes, counts and
-ranges), and when it can't show a rule holds, the program doesn't build. The
-error names the rule, the facts the compiler had, and values that would break
-it.
+the compiler doesn't claim your program does what you meant. Its rules are
+refinement types, the approach of
+[Liquid Haskell](https://ucsd-progsys.github.io/liquidhaskell/) and
+[Flux](https://flux-rs.github.io/flux/) for Rust: a rule is a condition on a
+value, and a solver checks it with no proof written by hand. Geng's solver
+reasons about whole numbers (lengths, indexes, counts and ranges), and when it
+can't show a rule holds, the program doesn't build.
 
 ## A report for you, and for your LLM
 
@@ -76,6 +74,32 @@ can never run and which ones can. You can see where the program relies on a
 proof and where it relies on a fallback, without reading every line. The same
 report is something the LLM can act on: turn a reachable fallback into a rule
 the compiler checks, build again, and watch the count go down.
+
+From the report for [puritty](https://github.com/gilramir/puritty), a
+terminal emulator written in Geng:
+
+<div class="checks" role="figure" aria-label="An excerpt of the checks report for puritty">
+<div class="checks-head"><span class="checks-prompt">$ geng checks</span><span class="checks-scope">puritty · vt, the terminal core</span></div>
+<div class="checks-totals">
+<span class="checks-total held"><b>107</b> checks hold</span>
+<span class="checks-total never"><b>14</b> fallbacks never run</span>
+<span class="checks-total reach"><b>180</b> can run</span>
+<span class="checks-total open"><b>14</b> open</span>
+</div>
+<div class="checks-module">Vt.Charset</div>
+<div class="checks-row"><span class="chip held">checks hold</span><code class="checks-def">go</code><span class="checks-line"></span><span class="checks-what">1 read in range · 21 contract checks · 10 sums cannot wrap · 1 fallback never runs</span></div>
+<div class="checks-module">Vt.View</div>
+<div class="checks-row"><span class="chip never">never runs</span><code class="checks-def">cellAt</code><span class="checks-line">:1092</span><span class="checks-what">the default of <code>withDefault</code> is never used</span></div>
+<div class="checks-row"><span class="chip open">open</span><code class="checks-def">cellAt</code><span class="checks-line">:1089</span><span class="checks-what"><code>row + x</code> can wrap, when <code>row = -2147483648</code>, <code>x = -1</code></span></div>
+<div class="checks-module">Vt.Cursor</div>
+<div class="checks-row"><span class="chip reach">can run</span><code class="checks-def">param</code><span class="checks-line">:86</span><span class="checks-what">the <code>Nothing</code> branch runs when <code>Array.length params = 0</code></span></div>
+</div>
+
+The first is the EUC-KR decoder: its table read is proved in range, because
+the decoder's state carries a rule the compiler checks at every step. The
+last is a fallback that runs by design, when an escape sequence leaves out its
+parameter, and the report shows the values that reach it so you can decide
+that at a glance.
 
 ## Reliable everywhere
 
