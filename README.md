@@ -2,6 +2,12 @@
 
 Source for the Geng website, built with [Zola](https://www.getzola.org/).
 
+Published at **https://geng-lang.org** by `.github/workflows/deploy.yml` on
+every push to `main` (the repository's Pages source is "GitHub Actions"; its
+custom domain is set in Settings → Pages, so there is no `CNAME` file).
+`www.geng-lang.org` and `geng-language.github.io` redirect to it, and
+`geng-language.org` is forwarded to it by its registrar.
+
 ## Local development
 
 Zola is provided by [Devbox](https://www.jetify.com/devbox) (pinned in `devbox.json` to the same version CI uses):
