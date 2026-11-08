@@ -901,12 +901,12 @@ Full rules: [Order matters](@/reference/types.md#order-matters).
 Almost nothing. There are two marks, and both are about saying what a
 function or a type does with a builder.
 
-- **`moved`** marks a function argument that the function uses up. Without
+- **`taken`** marks a function argument that the function uses up. Without
   it, the function may only look at the argument, and the caller can keep
   using the builder afterwards. With it, the caller cannot:
 
   ```geng
-  addLines : Array Line -> (moved b : Builder Line) -> Builder Line
+  addLines : Array Line -> (taken b : Builder Line) -> Builder Line
   addLines lines b =
       Array.foldl Builder.pushLast b lines
 
@@ -916,8 +916,8 @@ function or a type does with a builder.
       Builder.length b
   ```
 
-  In C++ terms, a plain argument is a `const Builder&` and a `moved` one is a
-  `Builder&&`. The signature has to be honest: leaving `moved` off `addLines`
+  In C++ terms, a plain argument is a `const Builder&` and a `taken` one is a
+  `Builder&&`. The signature has to be honest: leaving `taken` off `addLines`
   is an error, and so is putting it on `lineCount`. A function without a
   signature has this worked out from its body. If you know Rust, note that
   this is the opposite way round: there an unmarked argument is moved, and a
@@ -937,7 +937,7 @@ shared freely as before. Geng still writes those in place when it can prove
 no one else holds them, but that is an optimization, not a rule you have to
 follow.
 
-Full rules: [Functions: `moved`](@/reference/types.md#functions-moved) and
+Full rules: [Functions: `taken`](@/reference/types.md#functions-taken) and
 [Your own types](@/reference/types.md#your-own-types).
 
 ### What the compiler works out for itself
@@ -966,7 +966,7 @@ A refused program gets an `OWNERSHIP` error that points at both places and
 says what to write instead. This one is easy to write by accident:
 
 ```geng
-step : Maybe Int -> (moved acc : Builder Int) -> Builder Int
+step : Maybe Int -> (taken acc : Builder Int) -> Builder Int
 step m acc =
     m
         |> Maybe.map (\x -> Builder.pushLast x acc)
@@ -998,7 +998,7 @@ Hint: hand it to the function as an argument where the function is called.
 A `when` runs only one branch, so it has one push on each path, and compiles:
 
 ```geng
-step : Maybe Int -> (moved acc : Builder Int) -> Builder Int
+step : Maybe Int -> (taken acc : Builder Int) -> Builder Int
 step m acc =
     when m is
         Just x ->
@@ -1074,7 +1074,7 @@ Full rules: [A builder's length](@/reference/types.md#a-builders-length).
 ### In a package
 
 What a function does with its arguments is part of its interface, whether
-you wrote it (`moved`, `@affine`) or the compiler worked it out. `geng docs`
+you wrote it (`taken`, `@affine`) or the compiler worked it out. `geng docs`
 lists these facts for each exposed function, and `geng package diff`
 compares them between versions. Each one limits what a caller may do, so
 gaining one is a major change and losing one is minor.

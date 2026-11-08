@@ -44,8 +44,8 @@ Everything else is Gren's syntax. The additions:
 - **Constraints**: `Eq a =>`, `Num a =>` and so on, in type signatures.
 - **Attributes**: `@derive`, `@extern`, `@externPure`, `@capability` and
   `@affine`.
-- **Refinements** and **`moved`** in signatures: `(i : Int where 0 <= i)`
-  and `(moved b : Builder a)`. See
+- **Refinements** and **`taken`** in signatures: `(i : Int where 0 <= i)`
+  and `(taken b : Builder a)`. See
   [Geng's type system](@/docs/type-system.md).
 - **Expression annotations**: `(e : T)` gives an expression a type in place.
   This is how a literal gets a type other than its default: `(42 : Int64)`.

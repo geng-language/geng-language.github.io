@@ -18,7 +18,7 @@ weight = 20
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
 | `where` (in a type) | a [refinement](@/docs/type-system.md#refinement-types): `(n : Int where n > 0)` |
-| `moved` (in a type) | an argument the function [uses up](@/docs/type-system.md#builders-values-used-once): `(moved b : Builder a)` |
+| `taken` (in a type) | an argument the function [uses up](@/docs/type-system.md#builders-values-used-once): `(taken b : Builder a)` |
 
 Attributes start with `@` and come before a declaration:
 
@@ -215,8 +215,8 @@ type Document
     = Document { title : String, body : Builder Line }
 ```
 
-`moved` is not an attribute but a word before an argument's name in a
-signature, `(moved b : Builder a)`. It is only special there, so `moved` can
+`taken` is not an attribute but a word before an argument's name in a
+signature, `(taken b : Builder a)`. It is only special there, so `taken` can
 still be used as an ordinary name.
 
 ## Words that are no longer keywords

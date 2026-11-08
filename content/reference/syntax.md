@@ -97,12 +97,12 @@ type alias Move =
     }
 ```
 
-`moved`, for an [affine](@/reference/types.md#affine-types) argument the
+`taken`, for an [affine](@/reference/types.md#affine-types) argument the
 function uses up, goes before the name, and can be combined with a
 refinement:
 
 ```geng
-pushLast : a -> (moved builder : Builder a) -> Builder a
+pushLast : a -> (taken builder : Builder a) -> Builder a
 ```
 
 `geng fmt` keeps a refined signature on one line, with one space around each

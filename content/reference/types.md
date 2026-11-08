@@ -281,7 +281,7 @@ You may **look at** a builder as often as you like, until you **use** it.
 | `Builder.get i b` | finishing it: `Builder.toArray b` |
 | `Builder.slice from to b` | storing it in a record or custom type |
 | passing it to a function that only looks | returning it |
-| | passing it to a function that marks it `moved` |
+| | passing it to a function that marks it `taken` |
 
 A write gives back a new builder, and the next use must be of that one.
 `Builder.copy` only looks, and gives back a second builder with its own
@@ -310,14 +310,14 @@ compiles. Geng evaluates left to right and top to bottom:
 | call | arguments left to right, then the call | `pair (Builder.toArray b) (Builder.length b)` | `Builder.pushLast (Builder.length b) b` |
 | `\|>` | `x \|> f y` is `f y x`: `x` goes in last | | `b \|> Builder.pushLast (Builder.length b)` |
 
-### Functions: `moved`
+### Functions: `taken`
 
 A function argument that is a builder is only looked at, unless the signature
-marks it `moved`. `moved` tells the caller "I use this up, so you cannot use it
+marks it `taken`. `taken` tells the caller "I use this up, so you cannot use it
 again":
 
 ```geng
-addOne : (moved b : Builder Int) -> Builder Int
+addOne : (taken b : Builder Int) -> Builder Int
 addOne b =
     Builder.pushLast 1 b
 
@@ -328,13 +328,13 @@ countOf b =
 ```
 
 A caller can call `countOf b` and still use `b` afterwards, but not after
-`addOne b`. The signature must be honest: leaving out `moved` on `addOne` is an
+`addOne b`. The signature must be honest: leaving out `taken` on `addOne` is an
 error, and so is writing it on `countOf`.
 
-- `moved` goes on the arguments of a top-level or `let` signature. It cannot
+- `taken` goes on the arguments of a top-level or `let` signature. It cannot
   go on the result, on a callback's argument, or on a type that is not
   affine, including a type variable.
-- A function with no signature has its `moved` arguments worked out from its
+- A function with no signature has its `taken` arguments worked out from its
   body.
 - Whether a function keeps a callback it is given, and whether its result
   borrows from an argument, are always worked out from its body.
@@ -407,7 +407,7 @@ before the call.
 
 ### In a package {#builders-in-a-package}
 
-What a function does with its arguments, whether written (`moved`,
+What a function does with its arguments, whether written (`taken`,
 `@affine`) or worked out by the compiler, is part of its interface.
 `geng docs` lists it for each exposed function, and `geng package diff`
 compares it between versions. Each fact limits what a caller may do, so
