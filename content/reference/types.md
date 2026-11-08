@@ -187,12 +187,18 @@ introduction.
   record's fields bare, and only them. A record with one is refined like a
   refined alias.
 - A refined alias may be a field of a record written in a signature.
+- A variant's whole argument may be a refined alias, or a record with a
+  refined field: `type Decoder = Decoder Lead`. The constructor then asks
+  it of its argument wherever it is applied, and a `when` knows it of what
+  it binds.
 
-A refinement cannot go on a variant's argument, a field of another type
-alias, an extensible record or an expression's annotation.
+A refinement cannot be written on a variant's argument itself
+(`Decoder (lead : Int where ...)`), nor go on a field of another type alias,
+an extensible record or an expression's annotation.
 
-A function that refines its arguments cannot be used as a value, since the
-compiler could not see its calls. Pass a lambda that calls it instead:
+A function that refines its arguments, or a constructor whose argument is
+refined, cannot be used as a value, since the compiler could not see its
+calls. Pass a lambda that calls it instead:
 `Array.indexedMap (\i _ -> Array.getProven i b) a`.
 
 ### Conditions
