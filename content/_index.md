@@ -3,20 +3,21 @@ title = "Geng"
 description = "Correct by construction. Reliable everywhere."
 +++
 
+> “A craftsman who wants to do his work well must first sharpen his tools.”
+>
+> <span lang="zh-Hans">工欲善其事，必先利其器。</span>
+>
+> — Confucius <span lang="zh-Hans">孔子</span>, *Analects* <span lang="zh-Hans">论语</span>
+
 Speed is easy to measure. Correctness is harder, and it matters more: a fast
 program you can't trust is no use. Geng is a small, pure functional language
 that moves as much checking as it can into the compiler, so a program is
-checked before it runs, not *while* it runs. That matters more now that
+checked *before* it runs, not *while* it runs. That matters more now that
 LLMs write much of our code.
-
-Geng started as a fork of [Gren](https://gren-lang.org), which is itself a
-fork of [Elm](https://elm-lang.org). We thank everyone who has contributed
-to those languages: without them, we would not have had such a strong
-foundation.
 
 ## Correct by construction
 
-There is no `null` pointer, no exception to forget, and no case left unhandled. If a
+There is no `NULL` pointer, no exception to forget, and no case left unhandled. If a
 Geng program compiles, those crashes cannot happen.
 [What can still go wrong?](@/docs/error-handling.md#what-can-still-go-wrong)
 
@@ -24,7 +25,7 @@ Geng program compiles, those crashes cannot happen.
 
 Many checks that other languages make while the program runs (is this index
 in range? is this list empty? is this value valid?) can be done by the Geng
-compiler. You write the rule in the type, check it once where the data comes
+compiler **at compile time**. You write the rule in the type, check it once where the data comes
 in, and the compiler proves it holds everywhere else. Code past that check
 doesn't repeat it, doesn't slow down for it, and can't forget it.
 
@@ -43,6 +44,8 @@ report readings =
         "No readings yet"
 ```
 
+The `latest` function takes an `Array Float`, but not just any `Array Float`:
+only one that the compiler can prove has a length greater than zero. So
 `latest` reads the last element directly: no `Maybe`, no bounds check. The
 one check is in `report`, and the compiler sees it. Leave out the `if`, and
 the program does not compile. Yes, you can assert this at run time in any
@@ -88,3 +91,8 @@ See [Platforms and targets](@/docs/platforms.md).
 
 [Get started](@/docs/getting-started.md) · Geng is not released yet; see
 [Status and roadmap](@/docs/status.md).
+
+Geng started as a fork of [Gren](https://gren-lang.org), which is itself a
+fork of [Elm](https://elm-lang.org). We thank everyone who has contributed
+to those languages: without them, we would not have had such a strong
+foundation.
