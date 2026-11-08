@@ -55,7 +55,8 @@ the program does not compile: the error names the rule, the facts the
 compiler had, and values that would break it. See
 [Refinement types](@/docs/type-system.md#refinement-types).
 
-Geng is not a proof assistant like Lean or Coq. You don't write proofs, and
+Geng is not a proof assistant like [Lean](https://lean-lang.org/) or
+[Rocq](https://rocq-prover.org/). You don't write proofs, and
 the compiler doesn't claim your program does what you meant. Its rules are
 refinement types, the approach of
 [Liquid Haskell](https://ucsd-progsys.github.io/liquidhaskell/) and
