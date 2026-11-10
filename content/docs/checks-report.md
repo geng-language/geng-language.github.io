@@ -1,4 +1,6 @@
 +++
+# Hidden until Gilbert is satisfied with it.
+draft = true
 title = "Raising your checks with the checks report"
 description = "How to read the checks report and turn the fallbacks it finds into rules the compiler proves."
 weight = 24
