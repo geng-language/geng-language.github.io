@@ -139,9 +139,10 @@ type alias Nat =
     (n : Int where 0 <= n)
 ```
 
-A refined alias goes only where a signature names a value, or in a field of
-a record written there (`{ count : Nat } -> Int`): `Array Nat`, `Maybe Nat`
-and a field of type `Nat` in another type alias are errors.
+A refined alias goes where a signature names a value, in a field of a
+record written there (`{ count : Nat } -> Int`), in a field of a type
+alias's record, or as a variant's whole argument. `Array Nat` and `Maybe
+Nat` are errors, since nothing there is checked.
 
 An alias over a record states a rule about its fields, on the fields or on
 the whole record. These two are the same type:
@@ -155,6 +156,13 @@ type alias Move =
 type alias Move =
     (m : { items : Array Item, index : Int } where 0 <= m.index && m.index < Array.length m.items)
 ```
+
+Such an alias is a *type invariant*: its rule holds of every record of its
+type, so it goes anywhere a type does, `Maybe Move` and `Array Move`
+included. The compiler checks the rule wherever a record of that type is
+built or updated, and knows it wherever one is read. Two refined aliases of
+one record shape are an error, and so is a function generic in its record
+(`{ r | index : Int } -> ...`) that writes a field a rule reads.
 
 ## Function types
 
@@ -193,8 +201,9 @@ introduction.
   it binds.
 
 A refinement cannot be written on a variant's argument itself
-(`Decoder (lead : Int where ...)`), nor go on a field of another type alias,
-an extensible record or an expression's annotation.
+(`Decoder (lead : Int where ...)`), in a type's argument (`Maybe { index :
+Int where ... }`; name the record with an alias instead), on an extensible
+record or on an expression's annotation.
 
 A function that refines its arguments, or a constructor whose argument is
 refined, cannot be used as a value, since the compiler could not see its
@@ -209,9 +218,10 @@ calls. Pass a lambda that calls it instead:
   `Set.count` and `Array.Builder.length` of a name or a field, the
   measures `Maybe.isJust` and `Result.isOk`, which are conditions, a
   [measure of your own](#measures) applied to a name or a field, `+`, `-`,
-  `*` with a literal on one side, the six comparisons between numbers, `==`
+  `*` of two values at most, the six comparisons between numbers, `==`
   and `/=` between two conditions, and `&&`, `||`, `not`, `True` and
-  `False`. A name or field read directly must be an `Int`.
+  `False`. A name or field read directly must be an `Int`, or a `Bool`,
+  which is a condition: `(room : Int where not keep || 0 < room)`.
 - Nothing else: no calls to functions that are not measures, no records
   built in a condition, and no floats. Anything else is a `BAD REFINEMENT`
   error, or `NOT A MEASURE` for a call of a function not declared one.

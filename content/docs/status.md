@@ -76,10 +76,9 @@ the public release, so there is no standard library documentation yet.
 - **The command-line tool.** Command names and options are reviewed before
   release.
 - **Refinement types.** A record's rule is written on its fields or over the
-  whole record, and may be a variant's whole argument; such a record cannot
-  yet be a field of another type alias or sit inside a `Maybe` or an
-  `Array`, and a refined type alias cannot take a value as a parameter. Only
-  `Int`s, a record's `Int` fields and a few sizes can be refined. Patterns
+  whole record, and is a type invariant that goes anywhere a type does; a
+  refined type alias cannot take a value as a parameter. Only `Int`s,
+  `Bool`s, a record's fields of those types and a few sizes can be refined. Patterns
   are facts, a condition can say whether a `Maybe` is a `Just`
   (`Maybe.isJust`), and a program can define measures of its own
   (`@measure`), but not yet recursive ones, such as a tree's size; those

@@ -32,27 +32,56 @@ check once where the data comes in, and the compiler proves the rule holds
 everywhere after that. Code past that point doesn't repeat the check, doesn't
 slow down for it, and can't forget it.
 
-```geng
--- The type says there is always at least one reading.
-latest : (readings : Array Float where Array.length readings > 0) -> Float
-latest readings =
-    Array.getProven (Array.length readings - 1) readings
+A rule can sit on a type, too, and then every value of that type keeps it.
+This is the screen of [puritty](https://github.com/gilramir/puritty), a
+terminal emulator written in Geng, cut down to its layout: one flat buffer
+of cells, each row `cols` cells and one slot more, the rows going round a
+ring.
 
-report : Array Float -> String
-report readings =
-    if Array.length readings > 0 then
-        "Now " ++ String.fromFloat (latest readings) ++ "°C"
+```geng
+type alias Screen =
+    { cells : Builder Int64
+    , cols : Int
+    , rows : Int
+    , stride : Int
+    , base : Int
+    , size : Int
+        where 1 <= cols && 1 <= rows && rows <= size && stride == cols + 1
+            && 0 <= base && base < size && Builder.length cells == size * stride
+    }
+
+
+-- Where row `y` is in the ring.
+slot : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (r : Int where 0 <= r && r < s.size)
+slot s y =
+    if s.base >= s.size - y then
+        s.base - (s.size - y)
 
     else
-        "No readings yet"
+        s.base + y
+
+
+-- Where row `y` starts in the buffer: a whole row always fits after it.
+rowOffset : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (r : Int where 0 <= r && r + s.stride <= Builder.length s.cells)
+rowOffset s y =
+    slot s y * s.stride
+
+
+-- So reading a cell needs no bounds check and no Maybe.
+cellAt : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (x : Int where 0 <= x && x < s.cols) -> Int64
+cellAt s y x =
+    Builder.getProven (rowOffset s y + x) s.cells
 ```
 
-The `latest` function takes an `Array Float`, but not just any `Array Float`:
-only one that the compiler can prove has a length greater than zero. So
-`latest` reads the last element directly: no `Maybe`, no bounds check. The
-one check is in `report`, and the compiler sees it. Leave out the `if`, and
-the program does not compile: the error names the rule, the facts the
-compiler had, and values that would break it. See
+The rule after `where` is written once. The compiler checks it everywhere a
+`Screen` is built or changed, and knows it everywhere one is read. From it,
+the compiler proves that `slot` lands inside the ring, that `rowOffset`
+leaves room for a whole row (multiplying two values, without overflowing),
+and that `cellAt` reads inside the buffer, with no test at run time. Take
+`stride == cols + 1` out of the rule and the program does not compile: the
+compiler finds a screen that breaks the read, `s.cols = 1` with
+`s.stride = 0` and an empty buffer, and says so. In puritty itself, every
+read of a screen row is proved this way. See
 [Refinement types](@/docs/type-system.md#refinement-types).
 
 Geng is not a proof assistant like [Lean](https://lean-lang.org/) or
@@ -101,6 +130,8 @@ the decoder's state carries a rule the compiler checks at every step. The
 last is a fallback that runs by design, when an escape sequence leaves out its
 parameter, and the report shows the values that reach it so you can decide
 that at a glance.
+[Raising your checks with the checks report](@/docs/checks-report.md)
+walks through how puritty used it, round by round.
 
 ## Reliable everywhere
 

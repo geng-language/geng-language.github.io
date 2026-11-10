@@ -357,13 +357,16 @@ A condition is deliberately small. It can contain:
 - integer literals, and the names of the signature's arguments (or the
   result's own name, in the result's condition);
 - a record's fields, to any depth: `m.index`, `o.move.index`;
+- a name or a field that is a `Bool`, which is a condition of its own (see
+  [below](#conditions-on-a-bool));
 - a few *measures* applied to an argument or a field, such as
   `Array.length`, `Bytes.length`, `String.count`, `Dict.count`,
   `Set.count` and a builder's `Builder.length`: `Array.length m.items`;
 - `Maybe.isJust` and `Result.isOk`, which say which constructor a value is;
 - a [measure of your own](#measures-of-your-own), a function declared
   `@measure`: `isEmpty s`;
-- `+`, `-`, and `*` with a literal on one side;
+- `+`, `-`, and `*` of two values at most: `2 * n` or `rows * cols`, but
+  not `a * b * c`;
 - `<`, `<=`, `>`, `>=`, `==` and `/=` between numbers, and `==` and `/=`
   between two conditions: `Maybe.isJust r == (Array.length a > 0)`;
 - `&&`, `||`, `not`, `True`, `False` and parentheses.
@@ -381,6 +384,40 @@ record is refined through an alias, as the next sections show.
 
 Full rules: [Where a refinement goes](@/reference/types.md#where-a-refinement-goes)
 and [Conditions](@/reference/types.md#conditions).
+
+### Conditions on a `Bool` {#conditions-on-a-bool}
+
+A `Bool` argument is a condition, so one argument can decide what another
+owes. Here `room` must be positive only when the row is kept:
+
+```geng
+push : (keep : Bool) -> (room : Int where not keep || 0 < room) -> Int
+push keep room =
+    if keep then
+        needsRoom room      -- proved: keep is True here, so 0 < room
+
+    else
+        0
+```
+
+`push True 3` and `push False 0` compile; `push True 0` does not. A caller
+that tested what it passes owes nothing more: inside `if not keep || room >
+0 then push keep room`, the call is proved. A record's `Bool` field can
+guard a rule the same way, `(n : Int where not cfg.on || n < cfg.limit)`,
+and a result can say what the `Bool` it answers means:
+
+```geng
+positive : (n : Int) -> (r : Bool where r == (0 < n))
+positive n =
+    n > 0
+
+-- inside `if positive n`, the compiler knows 0 < n
+```
+
+This is how a function stops testing at run time what its caller already
+knows. puritty's terminal core had two such tests, one in its scrolling and
+one in its printing; both are gone, each replaced by a `Bool` the caller
+passes, and the compiler proves the rest.
 
 ### Naming a refinement
 
@@ -484,13 +521,58 @@ whole argument: `type Path = Path { bytes : Bytes, sep : Int where 0 <= sep
 && sep <= Bytes.length bytes }`. The constructor then asks its argument's
 rule wherever it is applied, and a `when` that matches it knows the rule.
 
-Anywhere else, a `Move` cannot go yet: not as a field of another type alias,
-and not inside a `Maybe` or an `Array`. An extensible record, `{ r | index :
-Int }`, cannot have one. So an application's model cannot hold a `Move` for
-now.
+A record alias with a rule goes anywhere a type does, and its rule goes
+with it. That is the next section.
 
 Full rules: [Type aliases](@/reference/types.md#type-aliases) and
 [Where a refinement goes](@/reference/types.md#where-a-refinement-goes).
+
+### Rules a type keeps everywhere
+
+A record alias with a rule is a *type invariant*: the rule holds of every
+record of that type, wherever it is. The compiler checks it each time such
+a record is built or updated, and knows it each time one turns up: as an
+argument, out of a `Maybe`, as a fold's accumulator, from a `Task`, or as a
+field of another record.
+
+```geng
+type alias Keys =
+    { stack : Array Int
+    , at : Int where 0 <= at && at < Array.length stack
+    }
+
+type alias Term =
+    { keys : Keys
+    , depth : Int
+    }
+
+flags : Term -> Int
+flags t =
+    -- proved: every `Keys` keeps its rule
+    Array.getProven t.keys.at t.keys.stack
+
+later : Task Never Term -> Task Never Int
+later task =
+    Task.map (\t -> Array.getProven t.keys.at t.keys.stack) task
+```
+
+Where the alias is written, it is just its type: a function that takes a
+`Keys` asks nothing of its caller beyond being given a `Keys`, and it can be
+passed around like any other function. The checking happens where records
+are made, so a program states its data's rules once, on the types, and every
+function that reads the data gets them for free.
+
+[puritty](https://github.com/gilramir/puritty), a terminal emulator written
+in Geng, keeps its screen this way: one buffer of cells whose length the
+screen's rule ties to its rows, columns and scrollback, so every read of a
+screen row is proved in range, through the terminal's state and the
+alternate screen kept in a `Maybe`. The [home page](@/_index.md) shows a
+cut-down version.
+
+Two rules on one record shape are refused, since the compiler could not
+tell which one a record keeps. So is a function generic in its record
+(`{ r | at : Int } -> { r | at : Int }`) that writes a field a rule reads:
+nothing there says which record it is updating.
 
 ### Measures of your own
 
@@ -758,6 +840,26 @@ With `Array.length temps = 1` and `i = 0`, it is False.
 
 Testing `i > 0` before the read makes it compile.
 
+### Many errors, a slow check, or a missing fact
+
+Adding refinements to code that already exists usually brings many errors
+at once, and three settings help with them. Each is an environment
+variable on `geng make` (they become options when the command-line tool is
+reviewed before release):
+
+- **`GENG_REFINE_SUMMARY=FILE`** groups the errors by what was asked (a
+  function's argument, a type's rule, a sum that may wrap), the largest
+  group first, each with its places. When puritty first refined every read
+  of its screen rows, its ninety errors were five causes.
+- **`GENG_REFINE_EXPLAIN=1`** makes each error that says "I know nothing
+  here that bears on it" say why: which values in the condition no fact
+  mentions, and where a fact about each was let go of, such as one learned
+  inside an `if` and dropped where its branches meet.
+- **`GENG_REFINE_PROFILE=FILE`** writes how much work the check did for
+  each definition, and its costliest questions. The work is counted in
+  solver steps, not seconds, so two builds compare exactly: if a change makes
+  the build slower, this says which function to look at.
+
 ### In a package
 
 A refinement on an exposed function is part of its type, so changing one is a
@@ -792,7 +894,9 @@ in 0.30 to 0.33 seconds, against 0.26 to 0.29 for one calling `Array.map`.
   is not known in advance. You check it once, with an `if` or a `when`, and
   from then on the compiler carries the result. That is the same "parse, don't
   validate" approach as today, with less wrapping.
-- **A `Maybe` hides what was checked.** The value inside a `Maybe` cannot be
+- **A `Maybe` hides what was checked of a plain value.** A record with a
+  rule keeps it inside a `Maybe`, as [above](#rules-a-type-keeps-everywhere),
+  but an `Int` does not. The value inside a `Maybe Int` cannot be
   refined, so a helper that returns `Maybe Int` loses what it tested.
 - **The compiler may give up.** When a call needs more cases than the checker
   tries, it says so rather than guessing. A test just before the call, or a
