@@ -341,8 +341,8 @@ getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 -- The result promises something about itself and the arguments.
 pushLast : x -> (a : Array x) -> (r : Array x where Array.length r == Array.length a + 1)
 
--- A callback's argument: `initialize` promises its function an index in range.
-initialize : (n : Int where 0 <= n) -> ((i : Int where 0 <= i && i < n) -> x) -> Array x
+-- A callback's argument: `indexedMap` promises its function an index in range.
+indexedMap : ((i : Int where 0 <= i && i < Array.length array) -> a -> b) -> (array : Array a) -> (r : Array b where Array.length r == Array.length array)
 
 -- An array that is never empty, so its first element always exists.
 firstOf : (a : Array x where Array.length a > 0) -> x
