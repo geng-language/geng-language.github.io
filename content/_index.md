@@ -35,8 +35,14 @@ slow down for it, and can't forget it.
 A rule can sit on a type, too, and then every value of that type keeps it.
 This is the screen of [puritty](https://github.com/gilramir/puritty), a
 terminal emulator written in Geng, cut down to its layout: one flat buffer
-of cells, each row `cols` cells and one slot more, the rows going round a
-ring.
+of cells. The rule after `where` is written once. The compiler checks it
+everywhere a `Screen` is built or changed, and knows it everywhere one is
+read. From it, the compiler proves that `slot` lands inside the ring, that
+`rowOffset` leaves room for a whole row (multiplying two values, without
+overflowing), and that `cellAt` reads inside the buffer, with no test at run
+time. Take `stride == cols + 1` out of the rule, and the program no longer
+compiles. In puritty itself, every read of a screen row is proved this way.
+See [Refinement types](@/docs/type-system.md#refinement-types).
 
 ```geng
 type alias Screen =
@@ -72,17 +78,6 @@ cellAt : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (x : Int where 
 cellAt s y x =
     Builder.getProven (rowOffset s y + x) s.cells
 ```
-
-The rule after `where` is written once. The compiler checks it everywhere a
-`Screen` is built or changed, and knows it everywhere one is read. From it,
-the compiler proves that `slot` lands inside the ring, that `rowOffset`
-leaves room for a whole row (multiplying two values, without overflowing),
-and that `cellAt` reads inside the buffer, with no test at run time. Take
-`stride == cols + 1` out of the rule and the program does not compile: the
-compiler finds a screen that breaks the read, `s.cols = 1` with
-`s.stride = 0` and an empty buffer, and says so. In puritty itself, every
-read of a screen row is proved this way. See
-[Refinement types](@/docs/type-system.md#refinement-types).
 
 Geng is not a proof assistant like [Lean](https://lean-lang.org/) or
 [Rocq](https://rocq-prover.org/). You don't write proofs, and
