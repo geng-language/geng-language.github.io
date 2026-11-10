@@ -32,7 +32,8 @@ check once where the data comes in, and the compiler proves the rule holds
 everywhere after that. Code past that point doesn't repeat the check, doesn't
 slow down for it, and can't forget it.
 
-A rule can sit on a type, too, and then every value of that type keeps it.
+A rule can sit in a type, too, and then every use of a value of that type
+must be proven to hold to those constraints.
 This is the screen of [puritty](https://github.com/gilramir/puritty), a
 terminal emulator written in Geng, cut down to its layout: one flat buffer
 of cells. The rule after `where` is written once. The compiler checks it
