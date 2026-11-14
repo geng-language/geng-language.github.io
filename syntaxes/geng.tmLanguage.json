@@ -77,7 +77,7 @@
       "patterns": [
         {
           "name": "keyword.control.geng",
-          "match": "\\b(if|then|else|when|is|let|in)\\b"
+          "match": "\\b(if|then|else|when|is|let|in|meant)\\b"
         },
         {
           "name": "keyword.other.geng",

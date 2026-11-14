@@ -15,6 +15,7 @@ weight = 20
 | `if`, `then`, `else` | conditional expressions |
 | `when`, `is` | pattern matching |
 | `let`, `in` | local definitions |
+| `meant` | a fallback that runs by design, with the reason why |
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
 | `where` (in a type) | a [refinement](@/docs/type-system.md#refinement-types): `(n : Int where n > 0)` |
@@ -143,6 +144,39 @@ when shape is
 ```
 
 Elm uses `case ... of`. Gren and Geng use `when ... is`.
+
+## Fallbacks you mean
+
+`meant Reason expression` marks a fallback that runs by design. Its value
+is the expression's. The reason is a constructor with no arguments, from a
+type of your own, and its variant needs a doc comment that says why:
+
+```geng
+type Reason
+    = {-| what came from outside was short or missing -}
+      FromOutside
+
+
+firstWord : Array String -> String
+firstWord words =
+    when Array.first words is
+        Just w ->
+            w
+
+        Nothing ->
+            meant FromOutside ""
+```
+
+`meant` is allowed only as the whole value of a fallback: a `Nothing` or
+`Err` branch, a `_` after `Just` or `Ok`, or the whole default of
+`Maybe.withDefault`, `Maybe.withDefaultLazy` or `Result.withDefault`.
+Anywhere else, or with a reason that has no doc comment, the build refuses
+it.
+
+A mark never turns a check off. `geng checks`, which lists every fallback
+the compiler cannot prove never runs, shows a marked one with its reason's
+words, and fails when a marked fallback can never run or a reason is used
+by no mark.
 
 ## Local definitions
 

@@ -64,8 +64,8 @@ that state happens and whether the default is right for it.
 1. Build the report and look at the fallbacks that can run.
 2. For each, read the values that reach it and decide which kind it is
    (the next section).
-3. Change the code so the compiler can prove the fallback away, or leave
-   it, because it runs by design.
+3. Change the code so the compiler can prove the fallback away, or mark
+   it [`meant`](#a-fallback-you-mean-meant), because it runs by design.
 4. Build again. The fallback is gone, and the checks that hold have grown.
 5. Keep what you won: hold the program to its list in CI (see
    [Keeping the count](#keeping-the-count)).
@@ -84,7 +84,7 @@ of puritty's were each:
 
 | kind | puritty | what it means | what to do |
 |---|---:|---|---|
-| intended | 92 | it runs by design: input from outside, a missing parameter, a key the program does not know | leave it; check the default is right |
+| intended | 92 | it runs by design: input from outside, a missing parameter, a key the program does not know | check the default is right, and mark it [`meant`](#a-fallback-you-mean-meant) |
 | a record's rule | 42 | an index is valid because of how a record's fields relate | write the rule on the record's type |
 | restructure | 24 | an index read that an index-free form avoids | walk the arrays together, or carry the element |
 | parameter | 17 | every caller passes a valid index | refine the parameter; the callers prove it |
@@ -199,6 +199,72 @@ its caller's test does: write the bound on the helper's argument, as
 puritty's `trimmed` takes `(n : Int where n <= Array.length cells)`, and
 the read inside becomes `Array.getProven`.
 
+### A fallback you mean: `meant`
+
+A fallback that runs by design gets a mark where it is, saying why:
+
+```geng
+type Reason
+    = {-| what the program in the terminal sent was short or malformed -}
+      FromOutside
+    | {-| a setting or option is not set, so its default applies -}
+      NotSet
+
+
+param : Int -> Array Int -> Int
+param i params =
+    when Array.get i params is
+        Just n ->
+            n
+
+        Nothing ->
+            meant NotSet 1
+
+
+columns : String -> Int
+columns text =
+    String.toInt text
+        |> Maybe.withDefault (meant FromOutside 80)
+```
+
+`meant Reason expression` is the expression's value; the program runs as
+if the mark were not there. The reason is a constructor with no arguments
+from a type of your own, and its variant must have a doc comment, which
+is the why. A reason without one does not build. The mark is allowed only
+as the whole value of a fallback: a `Nothing` or `Err` branch, a `_` after
+`Just` or `Ok`, or the whole default of `Maybe.withDefault`,
+`Maybe.withDefaultLazy` or `Result.withDefault`. Anywhere else the build
+refuses it.
+
+The report shows a marked fallback as `meant`, with its reason's words.
+This is puritty's `param`, where an escape sequence left out a parameter:
+
+```text
+meant   param:90   the Nothing branch runs when Array.length params = 0, get's result at 79:10.Just.0 = 0, k = 0, meant: Vt.Reason.NotSet (a setting or option is not set, so its default applies)
+```
+
+**A mark is a claim, and the compiler tests it.** It never turns a check
+off. When a later change means the marked fallback can never run, the
+report says `STALE`. When a reason's constructor is used by no mark, it
+says `UNUSED`. Either one fails `geng checks`, every time, with nothing to
+record that would let it pass. Take out the stale mark, or the fallback
+itself if nothing reaches it, or the reason nobody uses.
+
+**Mark only what you mean.** puritty's whole program had 1,114 fallbacks
+that could run. Reading each to give it a reason put 981 of them under
+nine reasons: `FromOutside`, `NotSet`, `NotOpen`, `NotKnown`,
+`OutOfRange`, `NoMore`, `NotYet`, `Gone` and `Refused`, one `Reason` type
+per package. The other 133 were not meant:
+
+- 121 could never run, for a reason the compiler could not see. A dozen
+  were the first or last piece of a `String.split`, which is never empty.
+- 11 were bugs the fallback was hiding. In its ssh client, a `Port` that
+  is not a number silently became 22, and channel data that did not read
+  was dropped.
+
+Those stay on the list (next section) until they are proved or fixed. A
+`meant` there would have been a claim the code does not keep.
+
 ## Open checks
 
 An open sum is one the compiler could not show stays inside `Int`, with
@@ -220,7 +286,8 @@ The report can be held to a list: every fallback that can run and every
 open check, by module and function, without line numbers, so that moving
 code does not move it. A run that finds something not on the list fails and
 names it; something gone from the list passes, and the list is written
-again. In CI, this catches the change that adds a silent
+again. A `meant` fallback is not on the list: its mark is its record, and
+a stale mark fails the run whatever the list says. In CI, this catches the change that adds a silent
 `Maybe.withDefault 0` where there was a proof, which is the kind of change
 an LLM makes and a reviewer misses.
 

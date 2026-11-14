@@ -54,6 +54,22 @@ or use one of the helpers:
 | `Maybe.map f m` | apply `f` to the value, if there is one |
 | `Maybe.andThen f m` | apply `f`, which itself returns a `Maybe` |
 
+A `Nothing` branch or a default is a choice about what the program does
+when the value is missing. When it is the intended answer, and not a
+place you hoped would never be reached, mark it with
+[`meant`](@/reference/keywords.md#fallbacks-you-mean) and a reason:
+
+```geng
+port : Maybe Int -> Int
+port given =
+    Maybe.withDefault (meant NotSet 22) given
+```
+
+The reason is a constructor of your own whose doc comment says why.
+`geng checks` lists every fallback the compiler cannot show never runs.
+It shows a marked one with its reason, and fails if a later change means
+the marked fallback can never run.
+
 ## Failures: `Result`
 
 `Result e a` is either `Ok a` or `Err e`. It replaces exceptions and Go's
