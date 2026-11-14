@@ -127,6 +127,8 @@ the decoder's state carries a rule the compiler checks at every step. The
 last is a fallback that runs by design, when an escape sequence leaves out its
 parameter, and the report shows the values that reach it so you can decide
 that at a glance.
+[Case study: puritty's checks, round by round](@/docs/checks-report.md)
+follows how puritty used it over nine rounds.
 
 ## Reliable everywhere
 
