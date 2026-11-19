@@ -252,5 +252,7 @@ The summaries from all five parts, in one place:
   practice, and what can still go wrong.
 - [Geng for Elm and Gren programmers](@/docs/coming-from-elm-gren.md), if you
   want to know where Geng's ideas come from.
-- [Types](@/reference/types.md), [Keywords](@/reference/keywords.md) and
-  [Operators](@/reference/operators.md) in the Reference, for the exact rules.
+- [Types](@/reference/types.md), [Refinement Types](@/reference/refinement-types.md),
+  [Affine Types](@/reference/affine-types.md), [Keywords](@/reference/keywords.md)
+  and [Operators](@/reference/operators.md) in the Reference, for the exact
+  rules.

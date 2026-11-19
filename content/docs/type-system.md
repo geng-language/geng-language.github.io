@@ -12,7 +12,8 @@ refinement types, which none of those languages have, and builders, which
 are written in place but checked by the compiler so they stay safe.
 
 This page explains the ideas. For the exact rules, see
-[Types](@/reference/types.md).
+[Types](@/reference/types.md), [Refinement Types](@/reference/refinement-types.md)
+and [Affine Types](@/reference/affine-types.md).
 
 ## A type is a set of values
 
@@ -327,7 +328,7 @@ that a value really meets the condition wherever the refined type is required.
 condition is erased. A refined program runs exactly the same code as an
 unrefined one, with no check added at run time, on every target.
 
-Full rules: [Refinement types](@/reference/types.md#refinement-types).
+Full rules: [Refinement types](@/reference/refinement-types.md).
 
 ### Writing one
 
@@ -382,8 +383,8 @@ including callbacks. A `let`'s condition may also name the arguments of the
 signatures around it. Annotations on expressions cannot be refined yet; a
 record is refined through an alias, as the next sections show.
 
-Full rules: [Where a refinement goes](@/reference/types.md#where-a-refinement-goes)
-and [Conditions](@/reference/types.md#conditions).
+Full rules: [Where a refinement goes](@/reference/refinement-types.md#where-a-refinement-goes)
+and [Conditions](@/reference/refinement-types.md#conditions).
 
 ### Conditions on a `Bool` {#conditions-on-a-bool}
 
@@ -525,7 +526,7 @@ A record alias with a rule goes anywhere a type does, and its rule goes
 with it. That is the next section.
 
 Full rules: [Type aliases](@/reference/types.md#type-aliases) and
-[Where a refinement goes](@/reference/types.md#where-a-refinement-goes).
+[Where a refinement goes](@/reference/refinement-types.md#where-a-refinement-goes).
 
 ### Rules a type keeps everywhere
 
@@ -614,7 +615,7 @@ branches are conditions' terms, or one such term. It cannot call itself yet,
 so a tree's size is not a measure for now. A rule broken is a `NOT A
 MEASURE` error naming it.
 
-Full rules: [Measures](@/reference/types.md#measures).
+Full rules: [Measures](@/reference/refinement-types.md#measures).
 
 ### Things that are almost refinement types
 
@@ -721,7 +722,7 @@ A value built with a constructor, or chosen by an `if`, is matched as it was
 written, so a branch no value can reach owes nothing. When a call cannot be
 proved, the error lists what the compiler knows, such as `m is Just`.
 
-Full rules: [How a condition is proved](@/reference/types.md#how-a-condition-is-proved).
+Full rules: [How a condition is proved](@/reference/refinement-types.md#how-a-condition-is-proved).
 
 ### Refinements in `core`
 
@@ -798,7 +799,7 @@ Geng's own code had exactly this bug in its byte decoder, and four sums in
 `core`'s sort wrapped past 2^30 elements. Refinement types found all of them,
 and they are fixed.
 
-Full rules: [Conditions](@/reference/types.md#conditions).
+Full rules: [Conditions](@/reference/refinement-types.md#conditions).
 
 ### When a refinement does not hold
 
@@ -874,7 +875,7 @@ application also checks every package it uses on every build, so a newer
 compiler, or a different version of a dependency, can never leave a package's
 refinements unchecked.
 
-Full rules: [In a package](@/reference/types.md#refinements-in-a-package).
+Full rules: [In a package](@/reference/refinement-types.md#refinements-in-a-package).
 
 ### What it costs
 
@@ -971,8 +972,8 @@ In practice you rarely name each step. A fold or a pipeline passes the builder
 along for you, as `squares` does above, and most code already follows the
 rule without trying.
 
-Full rules: [Affine types](@/reference/types.md#affine-types) and
-[Looking and using](@/reference/types.md#looking-and-using).
+Full rules: [Affine types](@/reference/affine-types.md) and
+[Looking and using](@/reference/affine-types.md#looking-and-using).
 
 ### Compiles, and does not
 
@@ -993,7 +994,7 @@ else
     Builder.toArray b
 ```
 
-Full rules: [Looking and using](@/reference/types.md#looking-and-using).
+Full rules: [Looking and using](@/reference/affine-types.md#looking-and-using).
 
 ### Order matters
 
@@ -1045,7 +1046,7 @@ When the compiler refuses code for its order, the error says "read again
 after that" and points at both places. The fix is almost always to move the
 look earlier, or to look at what the use gave back instead.
 
-Full rules: [Order matters](@/reference/types.md#order-matters).
+Full rules: [Order matters](@/reference/affine-types.md#order-matters).
 
 ### What you write
 
@@ -1088,8 +1089,8 @@ shared freely as before. Geng still writes those in place when it can prove
 no one else holds them, but that is an optimization, not a rule you have to
 follow.
 
-Full rules: [Functions: `taken`](@/reference/types.md#functions-taken) and
-[Your own types](@/reference/types.md#your-own-types).
+Full rules: [Functions: `taken`](@/reference/affine-types.md#functions-taken) and
+[Your own types](@/reference/affine-types.md#your-own-types).
 
 ### What the compiler works out for itself
 
@@ -1109,7 +1110,7 @@ captured, since a task runs that function at most once. Whether a function
 keeps the callback you give it, and whether its result is a borrow of an
 argument, are worked out from its body too.
 
-Full rules: [Fine print](@/reference/types.md#fine-print).
+Full rules: [Fine print](@/reference/affine-types.md#fine-print).
 
 ### When it is refused
 
@@ -1168,7 +1169,7 @@ Other common fixes:
 | `Array.sortWith` or `Array.remove` on an `Array (Builder Int)` | keep the rows in a `Builder`, and move them with `Builder.rotate` |
 | `get` a row of a builder of builders, change it, and `set` it back | `Builder.update`, which hands the row to your function and puts back what it returns |
 
-Full rules: [Affine types](@/reference/types.md#affine-types).
+Full rules: [Affine types](@/reference/affine-types.md).
 
 ### Reading a builder without a `Maybe`
 
@@ -1220,7 +1221,7 @@ lastCol s =
 Looking at the length is looking, not using, so it follows the same order
 rules as any other look: read it before the builder is used.
 
-Full rules: [A builder's length](@/reference/types.md#a-builders-length).
+Full rules: [A builder's length](@/reference/affine-types.md#a-builders-length).
 
 ### In a package
 
@@ -1230,7 +1231,7 @@ lists these facts for each exposed function, and `geng package diff`
 compares them between versions. Each one limits what a caller may do, so
 gaining one is a major change and losing one is minor.
 
-Full rules: [In a package](@/reference/types.md#builders-in-a-package).
+Full rules: [In a package](@/reference/affine-types.md#builders-in-a-package).
 
 ### What it costs
 
@@ -1247,7 +1248,7 @@ On JavaScript, and natively, a builder is a buffer written in place. On the
 BEAM it is a persistent tree, as before. The rules are the same everywhere:
 a program refused on one target is refused on all of them.
 
-Full rules: [Fine print](@/reference/types.md#fine-print).
+Full rules: [Fine print](@/reference/affine-types.md#fine-print).
 
 ## Summary
 
@@ -1269,5 +1270,7 @@ Full rules: [Fine print](@/reference/types.md#fine-print).
 ## Where to go next
 
 - [Types](@/reference/types.md): the full rules, including numbers, classes
-  and type inference.
+  and type inference; [Refinement Types](@/reference/refinement-types.md)
+  and [Affine Types](@/reference/affine-types.md) for refinements and
+  builders.
 - [Error handling](@/docs/error-handling.md): `Maybe` and `Result` in practice.

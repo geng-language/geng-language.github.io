@@ -73,7 +73,7 @@ this.
 
 ## Refinements
 
-A [refinement](@/reference/types.md#refinement-types) is written in a type
+A [refinement](@/reference/refinement-types.md) is written in a type
 signature: a name, the type, and optionally `where` and a condition, all in
 parentheses.
 
@@ -97,7 +97,7 @@ type alias Move =
     }
 ```
 
-`taken`, for an [affine](@/reference/types.md#affine-types) argument the
+`taken`, for an [affine](@/reference/affine-types.md) argument the
 function uses up, goes before the name, and can be combined with a
 refinement:
 

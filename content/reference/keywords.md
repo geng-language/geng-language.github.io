@@ -240,7 +240,7 @@ can only touch the file system or the network if the application hands it a
 permission.
 
 `@affine` marks a custom type that holds an `Array.Builder`, so its values
-are [used once](@/reference/types.md#affine-types). A record that holds one
+are [used once](@/reference/affine-types.md). A record that holds one
 needs no mark.
 
 ```geng
