@@ -14,7 +14,7 @@ getProven : (i : Int where 0 <= i && i < Array.length a) -> (a : Array x) -> x
 
 The compiler proves every condition at compile time, then erases it: a
 refined type is its underlying type at run time. See
-[Refinement types](@/docs/type-system.md#refinement-types) for a guided
+[Refinement types](@/docs/intro-to-refinement-types.md) for a guided
 introduction.
 
 ## Where a refinement goes

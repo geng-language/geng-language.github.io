@@ -126,7 +126,7 @@ Every place that makes or changes a `Keys` must keep the rule, and the
 compiler checks each one. In return, every place that reads a `Keys` can
 rely on it, wherever the record has travelled.
 
-The [type system chapter](@/docs/type-system.md#refinement-types) covers
+The [type system chapter](@/docs/intro-to-refinement-types.md) covers
 all of this at length.
 
 ## What the report says

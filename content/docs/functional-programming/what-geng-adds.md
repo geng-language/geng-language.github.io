@@ -122,7 +122,7 @@ checking it again everywhere else.
 
 They are also optional. Code that never uses one is ordinary Geng. The full
 story, including how the compiler explains a refinement it cannot prove, is
-in [Refinement types](@/docs/type-system.md#refinement-types).
+in [Refinement types](@/docs/intro-to-refinement-types.md).
 
 ## Debugging and testing
 

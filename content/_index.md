@@ -44,7 +44,7 @@ read. From it, the compiler proves that `slot` lands inside the ring, that
 overflowing), and that `cellAt` reads inside the buffer, with no test at run
 time. Take `stride == cols + 1` out of the rule, and the program no longer
 compiles. In puritty itself, every read of a screen row is proved this way.
-See [Refinement types](@/docs/type-system.md#refinement-types).
+See [Refinement types](@/docs/intro-to-refinement-types.md).
 
 ```geng
 type alias Screen =

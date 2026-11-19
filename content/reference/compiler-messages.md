@@ -33,7 +33,7 @@ weight = 60
     proving one (`CANNOT SHOW A REFINEMENT`, `CANNOT DECIDE A REFINEMENT`,
     `ARITHMETIC MAY WRAP`). The proving errors list each fact the compiler
     had and values that break the condition; see
-    [When a refinement does not hold](@/docs/type-system.md#when-a-refinement-does-not-hold).
+    [When a refinement does not hold](@/docs/intro-to-refinement-types.md#when-a-refinement-does-not-hold).
   - Ownership (`OWNERSHIP`): an affine value, such as an `Array.Builder`,
     used twice. The message points at both uses and says what to write
     instead; see

@@ -18,7 +18,7 @@ weight = 20
 | `meant` | a fallback that runs by design, with the reason why |
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
-| `where` (in a type) | a [refinement](@/docs/type-system.md#refinement-types): `(n : Int where n > 0)` |
+| `where` (in a type) | a [refinement](@/docs/intro-to-refinement-types.md): `(n : Int where n > 0)` |
 | `taken` (in a type) | an argument the function [uses up](@/docs/type-system.md#builders-values-used-once): `(taken b : Builder a)` |
 
 Attributes start with `@` and come before a declaration:
