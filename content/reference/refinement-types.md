@@ -94,6 +94,7 @@ calls. Pass a lambda that calls it instead:
 | Powers | `b ^ k` with a literal base of at least 2 and an `Int` exponent a value names: `r < 2 ^ k` |
 | Division | `//`, and `modBy`, `divFloor` and `remainderBy` of two numbers, divisor first: `tail == modBy 8 (head + size)` |
 | Bits | `Bitwise`'s methods, qualified as code writes them, by a constant or between two values: `wire == Bitwise.and 7 key`; and `Bitwise.popCount` |
+| `BigInt`'s functions | its exact ones, qualified: `add`, `mul`, `subBy`, `negate`, `fromInt`, `fromInt64`; the tests `isZero`, `isNegative`, `isEven`, `isOdd`, `fitsSigned`, `fitsUnsigned`; and the bits `and`, `or`, `xor`, `complement`, `shiftLeftBy`, `shiftRightBy`, `maskTo`, `toSigned`: `BigInt.fitsUnsigned 64 x`, `r == BigInt.fromInt n` |
 | Comparisons | `<`, `<=`, `>`, `>=`, `==` and `/=` between two numbers; `==` and `/=` between two conditions |
 | Logic | `&&`, `\|\|`, `not`, `True`, `False` and parentheses |
 
@@ -103,7 +104,9 @@ Nothing else:
 - a float, a string or a record built in a condition is `BAD REFINEMENT`;
 - a product of three values, `a * b * c`, is `NONLINEAR REFINEMENT`;
 - `^` with a base that is not a literal, a negative exponent or one past
-  4,096 is `EXPONENT IN A REFINEMENT`.
+  4,096 is `EXPONENT IN A REFINEMENT`;
+- `BigInt.abs`, `min` and `max`, which choose between two values, are `NOT A
+  MEASURE`: write the comparisons, `-10 < x && x < 10` for `abs x < 10`.
 
 **Types.** A condition is typed as code is. A bare literal takes the type of
 what it is compared with (`b == 255` at `UInt8`), a literal outside that
