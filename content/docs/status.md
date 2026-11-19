@@ -29,7 +29,7 @@ names and options may still change.
 | WebAssembly (WasmGC) backend | Planned |
 | JVM backend | Planned |
 | [Refinement types](@/docs/intro-to-refinement-types.md) | Built, on every target; `geng package` gives a changed refinement its semver magnitude |
-| [Affine builders](@/docs/type-system.md#builders-values-used-once) | Built: checked on every build and every target; `geng docs` and `geng package` report what each function does with its arguments |
+| [Affine builders](@/docs/builders.md) | Built: checked on every build and every target; `geng docs` and `geng package` report what each function does with its arguments |
 | `geng fmt` | Built |
 | `geng test` | Built, on every target |
 | `geng protobuf` | Built |

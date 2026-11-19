@@ -37,7 +37,7 @@ weight = 60
   - Ownership (`OWNERSHIP`): an affine value, such as an `Array.Builder`,
     used twice. The message points at both uses and says what to write
     instead; see
-    [When it is refused](@/docs/type-system.md#when-it-is-refused).
+    [When it is refused](@/docs/builders.md#when-it-is-refused).
   - Capabilities (`CAPABILITY IN A DEPENDENCY`).
   - Refused Gren constructs (`port module`, `effect module`).
   - Packages (dependency conflicts, invalid project file, `CORE IS NOT A DEPENDENCY`).

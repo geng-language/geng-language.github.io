@@ -144,11 +144,15 @@ types](@/docs/type-system.md#opaque-types-rules-the-compiler-cannot-see),
 this one is a plain `Int`. `setVolume 50` compiles with no `Maybe`, and
 `setVolume 150` does not compile at all.
 
-A refined alias goes only where a signature names a value, or in a field of
-a record written there. `Array Nat`, `Maybe Percent` and a field of type
-`Nat` in another type alias are errors, because nothing there is checked. An
-alias's condition reads only its own value, so `Nat` cannot say "an index
-into this array": write that one out, as `getProven` does.
+A refined alias goes where a signature names a value: an argument, a
+result or a `let`'s signature, and the elements of an `Array` or the payload
+of a `Maybe` there, so `Array Nat` and `Maybe Percent` are both fine. It
+also goes as a field's type in a record alias, `{ count : Nat }`. Inside
+another type alias, as an array's elements or a `Maybe`'s payload (`{ items
+: Array Nat }`), it is an error: write the element out there, `items : Array
+(n : Int where 0 <= n)`. An alias's condition reads only its own value, so
+`Nat` cannot say "an index into this array": write that one out, as
+`getProven` does.
 
 Full rules: [Type aliases](@/reference/types.md#type-aliases).
 

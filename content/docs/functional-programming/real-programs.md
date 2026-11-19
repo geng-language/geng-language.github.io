@@ -269,7 +269,7 @@ one's memory, but it doesn't promise to. When you are building a large array
 one element at a time, in a hot loop, use an `Array.Builder` instead. It
 writes into one buffer in place, like a Go slice you `append` to, and the
 compiler checks that you never keep using an old copy of it. See
-[Builders](@/docs/type-system.md#builders-values-used-once).
+[Builders](@/docs/builders.md).
 
 ### Arithmetic never crashes
 

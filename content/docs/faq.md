@@ -72,7 +72,7 @@ construction.
 When building a large array, an `Array.Builder` writes into one buffer in
 place, but nothing can see that happen: the compiler checks that a builder
 is used only once, so no one else holds it. See
-[Builders](@/docs/type-system.md#builders-values-used-once).
+[Builders](@/docs/builders.md).
 
 ### Why no exceptions?
 

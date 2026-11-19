@@ -19,7 +19,7 @@ weight = 20
 | `as` (in patterns) | naming a whole value while destructuring it |
 | `class`, `instance`, `where` | declaring classes and instances (first-party packages only, for now) |
 | `where` (in a type) | a [refinement](@/docs/intro-to-refinement-types.md): `(n : Int where n > 0)` |
-| `taken` (in a type) | an argument the function [uses up](@/docs/type-system.md#builders-values-used-once): `(taken b : Builder a)` |
+| `taken` (in a type) | an argument the function [uses up](@/docs/builders.md): `(taken b : Builder a)` |
 
 Attributes start with `@` and come before a declaration:
 

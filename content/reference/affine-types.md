@@ -12,7 +12,7 @@ freely. (Geng may still write those in place when it can prove nothing else
 holds them, as it does for [an array a loop sets](#builder-or-array), but
 that is an optimization, not a rule.)
 
-See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
+See [Builders](@/docs/builders.md) for a guided
 introduction.
 
 ## Looking and using
@@ -39,7 +39,7 @@ buffer.
 | | one use of `b` in each branch of an `if` or a `when` |
 
 Each refused case is an `OWNERSHIP` error that points at both places and
-suggests a fix. See [When it is refused](@/docs/type-system.md#when-it-is-refused)
+suggests a fix. See [When it is refused](@/docs/builders.md#when-it-is-refused)
 for common cases.
 
 ## Order matters

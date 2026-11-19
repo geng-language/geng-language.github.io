@@ -3,7 +3,7 @@
 draft = true
 title = "Cheat sheet: Python, Go, C++ to Geng"
 description = "Side-by-side equivalents of common constructs."
-weight = 25
+weight = 26
 +++
 
 > [!NOTE]

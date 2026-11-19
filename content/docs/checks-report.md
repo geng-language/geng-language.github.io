@@ -1,7 +1,7 @@
 +++
 title = "Case study: puritty's checks, round by round"
 description = "How puritty, a terminal emulator written in Geng, used the checks report in nine rounds over one week: fallbacks turned into proofs, bugs found, and what the language learned."
-weight = 24
+weight = 25
 +++
 
 [puritty](https://github.com/gilramir/puritty) is a terminal emulator
