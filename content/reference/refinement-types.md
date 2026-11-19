@@ -32,6 +32,8 @@ introduction.
 | A variant's whole argument | `type Decoder = Decoder Lead`, where `Lead` is a refined alias or a record with refined fields |
 | An array's or a builder's elements | `Array (x : Int where 0 <= x && x < 256)`, `Builder (c : Int where c < 16)`, `Array Nat` |
 | A `Maybe`'s payload | `Maybe (x : Int where 0 <= x && x < 10)`, `Maybe Nat` |
+| A `Set`'s elements | `Set (d : Int where 0 <= d && d < 16)` |
+| A `Dict`'s keys and values | `Dict (k : Int where 0 <= k && k < 16) (v : Int where v > 0)`, `Dict String Nat` |
 | The elements of a record alias's field | `cells : Array (c : Int where 0 <= c && c < 256)` |
 
 What each place means:
@@ -69,6 +71,11 @@ What each place means:
   `Array.map (\n -> needs n) sizes` is proved when `sizes`' elements are
   what `needs` asks. An element's condition can read only the element and
   what its signature's position may read.
+- **A `Set`'s element, or a `Dict`'s key or value**, holds of each in the
+  same way. `get`, `first`, `keys`, `values` and a fold read them, a lambda
+  given to `map`, `keepIf`, `any`, `all`, `findFirst` or `partition` knows
+  the key and value it is handed, and what `set`, `singleton`, `union`,
+  `remove`, `update` and `map` make is checked.
 
 A refinement cannot be written on a variant's argument directly
 (`Decoder (lead : Int where ...)`; use an alias) or on an extensible record

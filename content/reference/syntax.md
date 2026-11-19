@@ -191,6 +191,7 @@ argument may be `taken`:
 (r : Array x where Array.length r > 0)           -- a refined result
 Array (b : Int where 0 <= b && b < 256)          -- refined elements
 Maybe (i : Int where 0 <= i)                     -- a refined payload
+Dict (k : Int where 0 <= k) (v : Int where v > 0) -- refined keys and values
 { items : Array Item, index : Int where index < Array.length items } -- a field's condition
 (taken b : Builder a)                            -- an argument the function uses up
 ```
