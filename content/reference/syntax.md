@@ -127,8 +127,10 @@ r.width                     -- a field
 .width                      -- the function that reads it
 { r | width = 2, height = 3 } -- a record with fields replaced
 (n : Int64)                 -- a type given in place
-x |> f                      -- f x; and f <| x
-f >> g                      -- f, then g; and g << f
+x |> f                      -- f x
+f <| x                      -- f x
+f >> g                      -- f, then g
+g << f                      -- f, then g
 (+)                         -- an operator as a function
 ```
 
