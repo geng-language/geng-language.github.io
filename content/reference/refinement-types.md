@@ -1,6 +1,6 @@
 +++
 title = "Refinement Types"
-description = "Conditions on arguments and results, proved by the compiler: where a refinement goes, conditions, measures, how a condition is proved, and refinements in a package."
+description = "Conditions on values, proved by the compiler: every place a refinement can be written, what a condition can hold, measures, how a condition is proved, and refinements in a package."
 weight = 42
 +++
 
@@ -19,50 +19,100 @@ introduction.
 
 ## Where a refinement goes
 
-- On the arguments and the result of a top-level or `let` signature,
-  callbacks included. A `let` signature's condition may also name the
-  arguments of the signatures around it.
-- As the whole body of a type alias, including an alias over a record.
-- On a record's field, after its type:
-  `index : Int where index < Array.length items`. The condition reads the
-  record's fields bare, and only them. A record with one is refined like a
-  refined alias.
-- A refined alias may be a field of a record written in a signature.
-- A variant's whole argument may be a refined alias, or a record with a
-  refined field: `type Decoder = Decoder Lead`. The constructor then asks
-  it of its argument wherever it is applied, and a `when` knows it of what
-  it binds.
+| Place | Example |
+|---|---|
+| A function's argument | `(i : Int where 0 <= i)` |
+| A function's result, named | `(r : Array x where Array.length r == Array.length a + 1)` |
+| A callback's arguments and result | `((i : Int where 0 <= i && i < n) -> x)` |
+| A `let` signature | as a top-level one, and it may also name the arguments of the signatures around it |
+| A type alias, as its whole body | `type alias Percent = (p : Int where 0 <= p && p <= 100)` |
+| A record alias, as a rule over the whole record | `(m : { items : Array Item, index : Int } where m.index < Array.length m.items)` |
+| A record's field, after its type | `index : Int where index < Array.length items` |
+| A record written in a signature | its fields' conditions, or a refined alias as a field's type |
+| A variant's whole argument | `type Decoder = Decoder Lead`, where `Lead` is a refined alias or a record with refined fields |
+| An array's or a builder's elements | `Array (x : Int where 0 <= x && x < 256)`, `Builder (c : Int where c < 16)`, `Array Nat` |
+| A `Maybe`'s payload | `Maybe (x : Int where 0 <= x && x < 10)`, `Maybe Nat` |
+| The elements of a record alias's field | `cells : Array (c : Int where 0 <= c && c < 256)` |
 
-A refinement cannot be written on a variant's argument itself
-(`Decoder (lead : Int where ...)`), in a type's argument (`Maybe { index :
-Int where ... }`; name the record with an alias instead), on an extensible
-record or on an expression's annotation.
+What each place means:
+
+- **A signature's names.** An argument, the result or a callback's argument
+  can be named and refined. A refined argument is asked of every caller and
+  known inside the function; a refined result is asked of the function and
+  known by every caller. A callback is the other way round: its arguments
+  are promised to it, and its result is asked of it.
+- **A refined type alias** names a condition to write it once. `core` has
+  `Nat`, an `Int` that is never negative. Where the alias is written, its
+  condition is that argument's or result's. Its condition can read only its
+  own value, so it cannot say "an index into this array": write that one
+  out.
+- **A record alias with a rule** is a *type invariant*. The rule holds of
+  every record of the type, so the alias goes anywhere a type does,
+  `Maybe Move` and `Array Move` included. The compiler checks the rule
+  wherever such a record is built or updated, and knows it wherever one
+  is read. The rule may be written on the whole record or on its fields;
+  a field's condition reads the record's other fields bare, and only them.
+  Two refined aliases of one record shape are an error, and so is a function
+  generic in its record (`{ r | index : Int } -> ...`) that writes a field a
+  rule reads.
+- **A variant's argument** that is a refined alias, or a record with
+  refined fields, is the constructor's contract: the constructor asks it of
+  its argument wherever it is applied, and a `when` knows it of what it
+  binds.
+- **An element** of an `Array` or an `Array.Builder`, or the payload of a
+  `Maybe`, holds of each element: known wherever one is read, and asked
+  wherever an array is given. `core`'s array functions say what they do
+  with elements, so `Array.set`, `pushLast`, a literal and what `map`'s or
+  `initialize`'s callback makes are each checked. An element's condition
+  can read only the element and what its signature's position may read.
+
+A refinement cannot be written on a variant's argument directly
+(`Decoder (lead : Int where ...)`; use an alias) or on an extensible record
+(`{ r | index : Int where ... }`). Each is a `MISPLACED REFINEMENT` error.
 
 A function that refines its arguments, or a constructor whose argument is
 refined, cannot be used as a value, since the compiler could not see its
 calls. Pass a lambda that calls it instead:
 `Array.indexedMap (\i _ -> Array.getProven i b) a`.
 
-## Conditions
+## What a condition holds {#conditions}
 
-- A condition holds integer literals, the signature's names and their
-  fields (`m.index`, `o.move.index`), the measures `Array.length`,
-  `Bytes.length`, `Bytes.Owned.length`, `String.count`, `Dict.count`,
-  `Set.count` and `Array.Builder.length` of a name or a field, the
-  measures `Maybe.isJust` and `Result.isOk`, which are conditions, a
-  [measure of your own](#measures) applied to a name or a field, `+`, `-`,
-  `*` of two values at most, the six comparisons between numbers, `==`
-  and `/=` between two conditions, and `&&`, `||`, `not`, `True` and
-  `False`. A name or field read directly must be an `Int`, or a `Bool`,
-  which is a condition: `(room : Int where not keep || 0 < room)`.
-- Nothing else: no calls to functions that are not measures, no records
-  built in a condition, and no floats. Anything else is a `BAD REFINEMENT`
-  error, or `NOT A MEASURE` for a call of a function not declared one.
-- A condition's arithmetic is exact. The program's own `Int` arithmetic still
-  wraps at 32 bits, and where it feeds a refinement the compiler must show
-  that it does not wrap. When it may wrap, the error suggests a form that
-  cannot, such as `n <= length - offset` for `offset + n <= length`.
-- A name that no condition reads is an error.
+| Kind | What |
+|---|---|
+| Numbers | integer literals, decimal or hex, and `^` between literals, `a < 2 ^ 128` |
+| Names | the signature's arguments, the result's own name in the result's condition, a callback's arguments in the callback's conditions, a `let` signature's enclosing arguments |
+| Fields | a name's record fields, to any depth: `m.index`, `o.move.index` |
+| Value types | a name or field read directly is an integer, `Int`, `Int8`, `UInt8`, `Int16`, `UInt16`, `UInt32`, `Int64`, `UInt64` or `BigInt`, or a `Bool`, which is a condition of its own: `(room : Int where not keep \|\| 0 < room)` |
+| Sizes | `Array.length`, `Array.Builder.length`, `Bytes.length`, `Bytes.Owned.length`, `String.count`, `Dict.count` and `Set.count`, of a name or a field |
+| Which constructor | `Maybe.isJust` and `Result.isOk`, which are conditions |
+| Your own measures | a function declared `@measure`, applied to a name or a field: `isEmpty s` ([below](#measures)) |
+| Arithmetic | `+`, `-`, unary `-`, and `*` of two values at most (`2 * n`, `rows * cols`) |
+| Powers | `b ^ k` with a literal base of at least 2 and an `Int` exponent a value names: `r < 2 ^ k` |
+| Division | `//`, and `modBy`, `divFloor` and `remainderBy` of two numbers, divisor first: `tail == modBy 8 (head + size)` |
+| Bits | `Bitwise`'s methods, qualified as code writes them, by a constant or between two values: `wire == Bitwise.and 7 key`; and `Bitwise.popCount` |
+| Comparisons | `<`, `<=`, `>`, `>=`, `==` and `/=` between two numbers; `==` and `/=` between two conditions |
+| Logic | `&&`, `\|\|`, `not`, `True`, `False` and parentheses |
+
+Nothing else:
+
+- a call of a function that is not a measure is `NOT A MEASURE`;
+- a float, a string or a record built in a condition is `BAD REFINEMENT`;
+- a product of three values, `a * b * c`, is `NONLINEAR REFINEMENT`;
+- `^` with a base that is not a literal, a negative exponent or one past
+  4,096 is `EXPONENT IN A REFINEMENT`.
+
+**Types.** A condition is typed as code is. A bare literal takes the type of
+what it is compared with (`b == 255` at `UInt8`), a literal outside that
+type is refused, and comparing two types, an `Int` with a `UInt8`, is a type
+mismatch. A name that no condition reads is an error.
+
+**Arithmetic.** A condition's arithmetic is exact: it is never run, so
+`at + 4 <= Bytes.length b` means what it says over the integers, and so does
+`a < 2 ^ 128`. The program's own arithmetic still wraps at its type's width,
+and where it feeds a refinement the compiler must show that it does not
+wrap. When it may wrap, the error suggests a form that cannot, such as
+`n <= length - offset` for `offset + n <= length`. `BigInt` has no width,
+so its arithmetic owes nothing.
 
 ## Measures {#measures}
 
@@ -117,28 +167,57 @@ Where a refined type is required, the compiler uses:
   pattern says what its fields' patterns say, to any depth. A branch knows
   that the patterns before it did not match. Matching one value twice gives
   the same arguments both times;
-- the refinements on the enclosing function's arguments;
+- the refinements on the enclosing function's arguments, the invariants of
+  the records it is given, and what an element or a payload it reads is;
 - the promises in the results of functions called on the way. A promise
   holds only where its call was made: after
   `if b then below n else need n`, nothing `below` promised is known in the
   `else` branch;
-- invariants it infers for private loops. It does not infer them for
-  functions that call each other, or for facts that relate three values;
-  those need a refinement written on them.
+- invariants it infers for private loops, `core`'s folds among them. It
+  does not infer them for functions that call each other, or for facts that
+  relate three values; those need a refinement written on them.
+
+It reads the program's arithmetic as `Basics` computes it:
+
+- `+`, `-` and `*` at each integer type, held to that type's range;
+- `modBy`, `divFloor` and `remainderBy` exactly by a literal, and by any
+  other divisor only what holds for each sign of it;
+- `Bitwise` by a constant exactly, at every integer type, and between two
+  values bit by bit; `popCount` from 0 to its type's width;
+- `BigInt`'s own arithmetic, tests and bits by a constant exactly, and its
+  shifts, masks and fits by a width a value names through `2 ^ k`;
+- a product of two values with what holds of every product: two values at
+  least 0 make one at least 0, and a row's cells end before the next row's
+  begin, `y < rows` giving `y * cols + cols <= rows * cols`.
 
 It follows a value chosen by an `if`, whether a number, an array, a record
 (field by field) or a custom type (its constructor, and its `Int`
-arguments), and understands `min`, `max` and `clamp`.
-`f <| x` and `x |> f` are calls like `f x`. A record literal is checked with
-the values it was written with, and a record update with the fields it
-changed and the rest of the record it started from.
+arguments), and understands `min`, `max` and `clamp`. `==` on records
+compares field by field. A small helper of the same module, and a `let`'s
+function with no signature, is walked at each call with that call's
+arguments. Two calls of one function with the same arguments give the same
+answer. `f <| x` and `x |> f` are calls like `f x`. A record literal is
+checked with the values it was written with, and a record update with the
+fields it changed and the rest of the record it started from.
 
 The same expression written twice, such as a sum, is two separate values. To
 test it once and use it, name it with `let`.
 
-A condition the compiler cannot prove is a `CANNOT SHOW A REFINEMENT` error.
-When a proof needs more cases than the checker tries, the error says so
-rather than guessing.
+A condition the compiler cannot prove is a `CANNOT SHOW A REFINEMENT` error,
+and a sum that may wrap is `ARITHMETIC MAY WRAP`, each with values that
+break it. When a proof needs more cases than the checker tries, the error
+says so rather than guessing.
+
+## Asking without requiring
+
+`@candidate` before an annotated value turns its refinements into
+questions: each is checked and reported, and one the compiler cannot show
+refuses nothing. A candidate must refine something, may not be exposed, and
+nothing may name it, so no caller relies on what it could not show.
+
+`GENG_REFINE_JSON=<file>` has `geng make` write every condition it checked,
+proved or not, as one JSON document, for an editor, a CI annotation or a
+tool that shows an error in its own terms.
 
 ## In a package {#refinements-in-a-package}
 
