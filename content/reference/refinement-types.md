@@ -214,8 +214,8 @@ The same expression written twice, such as a sum, is two separate values. To
 test it once and use it, name it with `let`.
 
 A condition the compiler cannot prove is a `CANNOT SHOW A REFINEMENT` error,
-and a sum that may wrap is `ARITHMETIC MAY WRAP`, each with values that
-break it. When a proof needs more cases than the checker tries, the error
+and a sum, product or power that may wrap is `ARITHMETIC MAY WRAP`, each
+with values that break it. When a proof needs more cases than the checker tries, the error
 says so rather than guessing.
 
 ## Asking without requiring

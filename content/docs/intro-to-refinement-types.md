@@ -486,9 +486,9 @@ its calls. Pass a lambda that calls it instead:
 ## Overflow is checked too
 
 `Int` is 32 bits and [wraps on overflow](@/reference/operators.md), and the
-checker knows it. Where the program's own `+` or `-` feeds a refined
-condition, the compiler must also show that the arithmetic does not wrap.
-Arithmetic that feeds no refinement wraps as it always has.
+checker knows it. Where the program's own `+`, `-`, `*` or `2 ^ k` feeds a
+refined condition, the compiler must also show that the arithmetic does not
+wrap. Arithmetic that feeds no refinement wraps as it always has.
 
 This catches a classic bug. A test like `offset + n <= length` looks right,
 but with `offset = 1` and `n = 2147483647` the sum wraps to a negative number
