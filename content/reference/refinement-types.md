@@ -63,8 +63,12 @@ What each place means:
   `Maybe`, holds of each element: known wherever one is read, and asked
   wherever an array is given. `core`'s array functions say what they do
   with elements, so `Array.set`, `pushLast`, a literal and what `map`'s or
-  `initialize`'s callback makes are each checked. An element's condition
-  can read only the element and what its signature's position may read.
+  `initialize`'s callback makes are each checked. A lambda given to
+  `map`, `indexedMap`, `keepIf`, `any`, `all`, `findFirst`, `update`,
+  `sortBy`, `sortWith` or `Maybe.map` knows each element it is handed:
+  `Array.map (\n -> needs n) sizes` is proved when `sizes`' elements are
+  what `needs` asks. An element's condition can read only the element and
+  what its signature's position may read.
 
 A refinement cannot be written on a variant's argument directly
 (`Decoder (lead : Int where ...)`; use an alias) or on an extensible record
@@ -168,7 +172,10 @@ Where a refined type is required, the compiler uses:
   that the patterns before it did not match. Matching one value twice gives
   the same arguments both times;
 - the refinements on the enclosing function's arguments, the invariants of
-  the records it is given, and what an element or a payload it reads is;
+  the records it is given, and what an element or a payload it reads is,
+  including one a callback is handed;
+- the signature of a `let`'s constant, `sizes : Array (n : Int where n <
+  4096)`, wherever the constant is read, as for a top-level one;
 - the promises in the results of functions called on the way. A promise
   holds only where its call was made: after
   `if b then below n else need n`, nothing `below` promised is known in the
