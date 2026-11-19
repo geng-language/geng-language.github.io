@@ -1,117 +1,198 @@
 +++
 title = "Syntax"
-description = "Lexical structure: comments, literals, identifiers and layout."
+description = "The grammar at a glance: what every form looks like, with links to what it means."
 weight = 10
 +++
 
-Geng's syntax is Gren's, which is close to Elm's. This page covers the
-lexical basics; [Keywords](@/reference/keywords.md) and
-[Operators](@/reference/operators.md) cover the rest.
+What every form of Geng looks like, one example each. The pages linked from
+each section say what the forms mean. Geng's syntax is Gren's, which is
+close to Elm's.
 
 ## Comments
 
 ```geng
--- a line comment
+-- to the end of the line
 
-{- a block comment,
-   which can span lines -}
+{- a block,
+   over lines -}
 
-{-| A documentation comment, placed before a declaration. -}
+{-| documentation, before the declaration it describes -}
 ```
 
 ## Literals
 
 ```geng
-42              -- Int
-0xFF            -- Int, in hexadecimal
-3.14            -- Float
-'a'             -- Char, a single Unicode codepoint
-"hello\n"       -- String
-
-"""
-A multi-line string.
-"""
-
-[ 1, 2, 3 ]                 -- Array Int
-{ x = 1.0, y = 2.0 }        -- a record
+42                  -- Int
+-7
+0xFF                -- hexadecimal
+3.14                -- Float
+1.5e3
+'a'                 -- Char
+"one\ttwo\n"        -- String
+[ 1, 2, 3 ]         -- Array
+{ x = 1.0, y = 2.0 } -- record
+{}                  -- the empty record
 ```
 
-An integer literal is an `Int` and a literal with a decimal point is a
-`Float`, unless its context asks for another numeric type. To give a literal
-a type in place, annotate it:
+A multi-line string starts and ends with `"""`. Each line starts at the
+column of the opening quotes, and that indentation is not part of the
+string:
 
 ```geng
-(42 : Int64)
-(0.5 : Float32)
+help =
+    """
+    usage: tool FILE
+    """
 ```
 
-A literal that does not fit its type, such as `(300 : UInt8)`, is a compile
-error.
+- **Escapes**: `\n`, `\r`, `\t`, `\"`, `\'`, `\\`, and `\u{1F600}`, four
+  to six hex digits naming a codepoint that is not a surrogate.
+- **Numbers**: no `_` separators, no binary or octal, and a float has a
+  digit before its point (`0.5`, not `.5`).
+- **Types**: an integer literal is an `Int` and one with a point or an
+  exponent a `Float`, unless its context asks for another
+  ([Types](@/reference/types.md#numbers)). `(42 : Int64)` gives one in
+  place; a literal that does not fit its type is an error.
 
-## Identifiers
+## Names
 
-- Values, functions and record fields start with a lowercase letter:
-  `count`, `parseConfig`.
+- Values, functions and fields start with a lowercase letter: `count`.
 - Types, constructors and modules start with an uppercase letter: `Maybe`,
-  `Just`, `Dict`.
-- Letters can come from any script. Which characters count as letters is
-  decided by a fixed version of the Unicode database, so the same identifier
-  is valid everywhere. Module names are ASCII only.
-- A name cannot shadow another name already in scope.
+  `Just`, `Dict`. A module may be dotted, `Json.Decode`.
+- A name from another module is qualified, `Dict.empty`, unless its import
+  exposes it.
+- Letters come from any script, by a fixed version of the Unicode database;
+  module names are ASCII only.
+- A name cannot shadow another in scope. [Keywords](@/reference/keywords.md)
+  lists the reserved words.
 
 ## Layout
 
-Indentation is significant, as in Elm:
+Indentation is significant. A top-level declaration starts in the first
+column; everything that continues it is indented further; the branches of a
+`when` and the definitions of a `let` line up with each other. `geng fmt`
+writes the standard layout.
 
-- Top-level declarations start in the first column.
-- Everything that continues a declaration is indented further.
-- The branches of a `when` and the definitions in a `let` line up with each
-  other.
-
-`geng fmt` produces the standard layout, so in practice you rarely think about
-this.
-
-## Refinements
-
-A [refinement](@/reference/refinement-types.md) is written in a type
-signature: a name, the type, and optionally `where` and a condition, all in
-parentheses.
+## Declarations
 
 ```geng
-safeDivide : Int -> (d : Int where d /= 0) -> Int
+module Shape exposing (Shape(..), Sku, area)
+
+import Dict exposing (Dict)
+import Json.Decode as Decode
+import Math
+
+
+{-| A shape. -}
+type Shape
+    = Circle { radius : Float }
+    | Rectangle { width : Float, height : Float }
+    | Point
+
+
+type alias Size =
+    { width : Float, height : Float }
+
+
+area : Shape -> Float
+area shape =
+    when shape is
+        Circle { radius } ->
+            Math.pi * radius * radius
+
+        Rectangle { width, height } ->
+            width * height
+
+        Point ->
+            0
+
+
+@derive(Eq, Ord)
+type Sku
+    = Sku { code : UInt32 }
 ```
 
-A condition may read a record's fields, written as in an expression:
+`exposing (Shape(..))` exposes a type with its constructors; without `(..)`,
+as `Sku` here, it is abstract, and `@derive` asks for its `Eq` and `Ord`. A constructor takes at most one argument. An attribute
+(`@derive`, `@extern`, `@measure`, ...) goes on the line before its
+declaration ([Keywords](@/reference/keywords.md#attributes)).
+
+## Expressions
 
 ```geng
-apply : (m : { items : Array Item, index : Int } where m.index < Array.length m.items) -> Item
+f x y                       -- a call
+\x y -> x + y               -- a function
+if n < 0 then a else b      -- every `if` has an `else`
+r.width                     -- a field
+.width                      -- the function that reads it
+{ r | width = 2, height = 3 } -- a record with fields replaced
+(n : Int64)                 -- a type given in place
+x |> f                      -- f x; and f <| x
+f >> g                      -- f, then g; and g << f
+(+)                         -- an operator as a function
 ```
-
-A record field's condition follows its type, inside the braces, and names the
-record's other fields bare:
 
 ```geng
-type alias Move =
-    { items : Array Item
-    , index : Int where 0 <= index && index < Array.length items
-    }
+when shape is
+    Circle { radius } ->
+        radius
+
+    _ ->
+        0
+
+let
+    double : Int -> Int
+    double x =
+        x * 2
+in
+double n
 ```
 
-`taken`, for an [affine](@/reference/affine-types.md) argument the
-function uses up, goes before the name, and can be combined with a
-refinement:
+[Operators](@/reference/operators.md) has every operator and its
+precedence; [Keywords](@/reference/keywords.md) has `if`, `when`, `let` and
+`meant`.
+
+## Patterns
+
+In a `when`, a function's arguments, and a `let`'s left-hand side:
+
+| Pattern | Matches |
+|---|---|
+| `_` | anything |
+| `x` | anything, and names it |
+| `0`, `'a'`, `"x"` | that literal |
+| `Nothing`, `Just x`, `Just (Ok x)` | a constructor, and its argument |
+| `{ x, y }` | a record, naming its fields |
+| `{ x = 0, y }`, `{ rest = more }` | a field matched by a pattern, or named another way |
+| `[]`, `[ x ]`, `[ x, y ]` | an array of exactly that length |
+| `Just x as m` | the pattern, and the whole value as `m` |
+
+A `when` must cover every value its subject can have.
+
+## Types
 
 ```geng
-pushLast : a -> (taken builder : Builder a) -> Builder a
+Int
+Maybe a                         -- a type with a type variable
+Int -> String -> Bool           -- a function
+{ x : Float, y : Float }        -- a record
+{ r | x : Float }               -- any record with at least `x`
+{}                              -- the empty record
+Eq a => a -> Array a -> Bool    -- a constraint
 ```
 
-`geng fmt` keeps a refined signature on one line, with one space around each
-operator. A signature broken before each `->` stays broken, one argument a
-line:
+A signature's argument or result may be named and refined, and an
+argument may be `taken`:
 
 ```geng
-fixed32 :
-    (b : Bytes)
-    -> (at : Int where 0 <= at && at + 4 <= Bytes.length b)
-    -> Int
+(i : Int where 0 <= i && i < Array.length a)     -- a refined argument
+(r : Array x where Array.length r > 0)           -- a refined result
+Array (b : Int where 0 <= b && b < 256)          -- refined elements
+Maybe (i : Int where 0 <= i)                     -- a refined payload
+{ items : Array Item, index : Int where index < Array.length items } -- a field's condition
+(taken b : Builder a)                            -- an argument the function uses up
 ```
+
+[Types](@/reference/types.md), [Refinement
+Types](@/reference/refinement-types.md) and [Affine
+Types](@/reference/affine-types.md) say what each means and where it may go.
