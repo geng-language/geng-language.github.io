@@ -30,6 +30,8 @@ Attributes start with `@` and come before a declaration:
 | `@externPure(...)` | the same, for a function with no effects |
 | `@capability` | marking a value only the application may use |
 | `@affine` | marking a custom type that holds a builder, so it is used once |
+| `@measure` | a function a [refinement](@/reference/refinement-types.md#measures) may call |
+| `@candidate` | refinements checked and reported, never required |
 
 ## Modules
 
@@ -248,6 +250,43 @@ needs no mark.
 type Document
     = Document { title : String, body : Builder Line }
 ```
+
+`@measure` declares a function that a refinement's condition may call. Its
+body is one `when` over its one argument, and the compiler reads what it
+says of each constructor. See
+[Measures](@/reference/refinement-types.md#measures) for its rules.
+
+```geng
+@measure
+isEmpty : Shape -> Bool
+isEmpty s =
+    when s is
+        Empty ->
+            True
+
+        _ ->
+            False
+
+
+side : (s : Shape where not (isEmpty s)) -> Int
+```
+
+`@candidate` turns an annotated value's refinements into questions: each is
+checked and reported, and one the compiler cannot prove refuses nothing. It
+is for trying a condition out before relying on it. A candidate must refine
+something, may not be exposed, and nothing may name it, so no code ever
+relies on what it could not prove.
+
+```geng
+@candidate
+halfFull : Ring -> (same : Ring where same.size <= 4)
+halfFull r =
+    r
+```
+
+`@prim` and `@inline` exist only in `core`: one binds a value to one of the
+compiler's primitives, the other asks for a function to be inlined. Either
+anywhere else is a compile error.
 
 `taken` is not an attribute but a word before an argument's name in a
 signature, `(taken b : Builder a)`. It is only special there, so `taken` can
