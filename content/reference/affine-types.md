@@ -9,7 +9,8 @@ An affine value can be *used* only once. Today that means one type,
 buffer in place, and this rule is what makes that safe. Nothing else in Geng
 is affine: `Array`, `String`, `Dict`, records of them and so on are shared
 freely. (Geng may still write those in place when it can prove nothing else
-holds them, but that is an optimization, not a rule.)
+holds them, as it does for [an array a loop sets](#builder-or-array), but
+that is an optimization, not a rule.)
 
 See [Builders](@/docs/type-system.md#builders-values-used-once) for a guided
 introduction.
@@ -147,6 +148,36 @@ before the call.
 - The rules are the same on every target: a program refused on one is
   refused on all. On JavaScript and native targets a builder is a buffer
   written in place; on the BEAM it is a persistent tree.
+
+## Builder or array? {#builder-or-array}
+
+An `Array` is for building once and reading; a builder is for writing.
+`Array.set` copies the whole array natively and on JavaScript, so a loop
+that sets one element a step copies it every step.
+
+One loop is written in place anyway: one that sets, updates and reads
+elements of the array it hands back to itself, in its own body (a
+recursion, or the function a fold calls), and keeps no older version. The
+compiler runs it through a builder for you, natively and on JavaScript:
+
+```geng
+-- written in place: `acc` is set in the loop's own body
+bump : Int -> Array Int -> Array Int
+bump i acc =
+    if i >= Array.length acc then
+        acc
+
+    else
+        bump (i + 1) (Array.update i (\x -> x + 1) acc)
+```
+
+That is an optimization, and it is easy to lose: move the `Array.set` into
+a function the loop calls, or keep the old array to read after the write,
+and every step copies again, with no error. A builder is written in place
+however the loop is written, and the compiler refuses a program that would
+copy it, so a loop over a large array that must stay fast is a builder's.
+On the BEAM an array that has been set is a persistent tree, as a builder
+is, and either costs a few steps a write.
 
 ## In a package {#builders-in-a-package}
 

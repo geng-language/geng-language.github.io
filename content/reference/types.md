@@ -17,6 +17,7 @@ Geng's numeric types have the same size and behavior on every platform.
 | `Float` | 64-bit IEEE 754 | the default for literals with a decimal point |
 | `Float32` | 32-bit IEEE 754 | |
 | `Int8`, `UInt8`, `Int16`, `UInt16` | 8 and 16 bits | for binary formats and interop |
+| `BigInt` | any size | an integer with no width; see [below](#bigint) |
 
 ### Literals
 
@@ -38,12 +39,44 @@ A literal that does not fit its type is a compile error.
 
 No arithmetic operation crashes:
 
-- **Integer overflow wraps**, for every integer type.
+- **Integer overflow wraps**, for every fixed-width integer type. A `BigInt`
+  has no width, so it never wraps.
 - **Integer division by zero is `0`**: `x // 0 == 0`, and `remainderBy 0 n == n`.
 - **Shifts** by more than the width are clamped.
 - **Lossy conversions saturate**: converting a value too large for the target
   type gives the largest value the target can hold.
 - **Floats** are IEEE 754 on every platform, including infinity and NaN.
+
+### BigInt
+
+A `BigInt` is an integer of any size, for values no fixed width promises to
+hold: 128-bit identifiers, hashes, a count that must not wrap. It is each
+platform's own big integer (JavaScript's `BigInt`, the BEAM's integers, and
+a native implementation), so it behaves the same everywhere.
+
+`+`, `-`, `*`, `//`, `modBy`, `remainderBy` and the comparisons work on it
+as on any integer, and a literal of any size can be one:
+
+```geng
+limit : BigInt
+limit =
+    340282366920938463463374607431768211456
+
+next : BigInt -> BigInt
+next a =
+    a * 2 + 1
+```
+
+The `BigInt` module has the rest: conversions to and from `Int`, `Int64`,
+`Float` and strings in any base; division that answers a `Maybe` for a zero
+divisor (`quotBy`, `divBy`, `modBy`), beside `//` and `modBy`'s `0`; and
+bits, read as two's complement of unbounded width, so `complement 5 == -6`.
+A width is a question you ask of a value, not a property it carries:
+`BigInt.maskTo 64 x` is what `x` looks like as a `UInt64`,
+`BigInt.toSigned 64 x` as an `Int64`, and `BigInt.fitsUnsigned 128 x` says
+whether it fits 128 bits. A width can also be a
+[refinement](@/reference/refinement-types.md),
+`(a : BigInt where 0 <= a && a < 2 ^ 128)`.
 
 ### Float equality and ordering
 
