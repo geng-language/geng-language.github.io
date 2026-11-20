@@ -77,6 +77,29 @@ What each place means:
   the key and value it is handed, and what `set`, `singleton`, `union`,
   `remove`, `update` and `map` make is checked.
 
+### A callback handed a container's elements {#a-callback-handed-a-container-s-elements}
+
+A function may promise its callback only elements of one of its
+containers, by refining the callback's argument with `member`:
+
+```geng
+anyOf : ((x : a where Array.member x items) -> Bool) -> (items : Array a) -> Bool
+anyOf keep items =
+    Array.any (\x -> keep x) items
+```
+
+Inside `anyOf`, each call of `keep` is checked: its argument must have been
+read out of `items`, by a lambda `core` hands it to, a fold, or the `Just`
+of `get`, `first`, `last` or `findFirst`. A value the caller gave, or one
+computed from an element, `x + 1`, is refused. A caller's lambda,
+`anyOf (\x -> needs x > 4) sizes`, knows `x` is one of `sizes`', and so
+whatever `sizes`' elements are known to be. `Set.member x s` says the same
+of a set, and `Dict.member k d` of a dictionary's keys.
+
+`member` takes two names or fields, never an expression, and asks no `Eq`
+or `Ord` of the type, since it says where the value came from rather than
+comparing it.
+
 A refinement cannot be written on a variant's argument directly
 (`Decoder (lead : Int where ...)`; use an alias) or on an extensible record
 (`{ r | index : Int where ... }`). Each is a `MISPLACED REFINEMENT` error.
@@ -102,6 +125,7 @@ calls. Pass a lambda that calls it instead:
 | Division | `//`, and `modBy`, `divFloor` and `remainderBy` of two numbers, divisor first: `tail == modBy 8 (head + size)` |
 | Bits | `Bitwise`'s methods, qualified as code writes them, by a constant or between two values: `wire == Bitwise.and 7 key`; and `Bitwise.popCount` |
 | `BigInt`'s functions | its exact ones, qualified: `add`, `mul`, `subBy`, `negate`, `fromInt`, `fromInt64`; the tests `isZero`, `isNegative`, `isEven`, `isOdd`, `fitsSigned`, `fitsUnsigned`; and the bits `and`, `or`, `xor`, `complement`, `shiftLeftBy`, `shiftRightBy`, `maskTo`, `toSigned`: `BigInt.fitsUnsigned 64 x`, `r == BigInt.fromInt n` |
+| Where a value came from | `Array.member`, `Set.member` and `Dict.member` of two names or fields, a value and its container: `(x : a where Array.member x items)` ([below](#a-callback-handed-a-container-s-elements)) |
 | Comparisons | `<`, `<=`, `>`, `>=`, `==` and `/=` between two numbers; `==` and `/=` between two conditions |
 | Logic | `&&`, `\|\|`, `not`, `True`, `False` and parentheses |
 
