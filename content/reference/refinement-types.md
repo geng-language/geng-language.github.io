@@ -109,6 +109,13 @@ refined, cannot be used as a value, since the compiler could not see its
 calls. Pass a lambda that calls it instead:
 `Array.indexedMap (\i _ -> Array.getProven i b) a`.
 
+Where `core` hands the callback elements, as `Array.map`, `keepIf`, `any`,
+`indexedMap`, `Maybe.map` and the `Set` and `Dict` functions do, the function
+may be passed by its name, or with some of its arguments given:
+`Array.map needs sizes` is read as `Array.map (\n -> needs n) sizes`, and
+`Array.map (scaled 2) sizes` as `Array.map (\n -> scaled 2 n) sizes`, so each
+call is checked knowing the element it is handed.
+
 ## What a condition holds {#conditions}
 
 | Kind | What |
