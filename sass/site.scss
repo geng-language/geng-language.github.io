@@ -364,6 +364,22 @@ a { color: var(--accent); }
   .next { margin-left: auto; }
 }
 
+/* A large monitor: the column grows with the screen, so the text is not a
+   narrow strip between wide margins and a code block fits it. Laptop and
+   phone widths keep the sizes above. */
+@media (min-width: 100rem) {
+  :root { --wrap: 96rem; }
+  .home { max-width: 62rem; }
+  .narrow { max-width: 62rem; }
+}
+
+@media (min-width: 140rem) {
+  :root { --wrap: 112rem; }
+  .home { max-width: 72rem; }
+  .narrow { max-width: 72rem; }
+  .docs-layout { grid-template-columns: 16rem minmax(0, 1fr) 14rem; }
+}
+
 @media (max-width: 64rem) {
   .docs-layout { grid-template-columns: 12rem minmax(0, 1fr); }
   .toc { display: none; }
