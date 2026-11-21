@@ -78,18 +78,18 @@ whose maximum is 1, healed to 50:
 
 Every `Player` keeps this, so a record of its shape built or updated here must:
 
-    0 <= player.health && player.health <= player.maxHealth && 1 <= player.maxHe
-alth && player.maxHealth <= 999
+    0 <= player.health && player.health <= player.maxHealth
+        && 1 <= player.maxHealth && player.maxHealth <= 999
 
 and I cannot show it here:
 
 17|     { p | health = p.health + 50 }
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here, with this call's values for its names, that is:
+Here, with the new record's fields, that is:
 
-    0 <= p.health + 50 && p.health + 50 <= p.maxHealth && 0 < p.maxHealth && p.m
-axHealth <= 999
+    0 <= p.health + 50 && p.health + 50 <= p.maxHealth && 0 < p.maxHealth
+        && p.maxHealth <= 999
 
 What I know here:
 
@@ -111,15 +111,15 @@ the other:
 
 Every `Player` keeps this, so a record of its shape built or updated here must:
 
-    0 <= player.health && player.health <= player.maxHealth && 1 <= player.maxHe
-alth && player.maxHealth <= 999
+    0 <= player.health && player.health <= player.maxHealth
+        && 1 <= player.maxHealth && player.maxHealth <= 999
 
 and I cannot show it here:
 
 27|     { p | maxHealth = newMax }
         ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here, with this call's values for its names, that is:
+Here, with the new record's fields, that is:
 
     0 <= p.health && p.health <= newMax && 0 < newMax && newMax <= 999
 
