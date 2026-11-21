@@ -32,54 +32,211 @@ check once where the data comes in, and the compiler proves the rule holds
 everywhere after that. Code past that point doesn't repeat the check, doesn't
 slow down for it, and can't forget it.
 
-A rule can sit on a type, too: every place that builds or changes a value of
-that type must prove the rule holds, and every place that reads one can rely
-on it.
-This is the screen of [puritty](https://github.com/gilramir/puritty), a
-terminal emulator written in Geng, cut down to its layout: one flat buffer
-of cells. The rule after `where` is written once. The compiler checks it
-everywhere a `Screen` is built or changed, and knows it everywhere one is
-read. From it, the compiler proves that `slot` lands inside the ring, that
-`rowOffset` leaves room for a whole row (multiplying two values, without
-overflowing), and that `cellAt` reads inside the buffer, with no test at run
-time. Take `stride == cols + 1` out of the rule, and the program no longer
-compiles. In puritty itself, every read of a screen row is proved this way.
-See [Refinement types](@/docs/intro-to-refinement-types.md).
+### Fields that must agree
+
+A rule can sit on a type, too. Every place that builds or changes a value of
+that type must prove the new value keeps the rule, and every place that reads
+one can rely on it. Here a game character's health may never be more than
+its maximum:
 
 ```geng
-type alias Screen =
-    { cells : Builder Int64
-    , cols : Int
-    , rows : Int
-    , stride : Int
-    , base : Int
-    , size : Int
-        where 1 <= cols && 1 <= rows && rows <= size && stride == cols + 1
-            && 0 <= base && base < size && Builder.length cells == size * stride
+type alias Player =
+    { name : String
+    , health : Int
+    , maxHealth : Int
+        where 0 <= health && health <= maxHealth && 1 <= maxHealth && maxHealth <= 999
     }
+```
+
+<details class="more">
+<summary>How every change to a <code>Player</code> is held to its rule</summary>
+
+```geng
+-- A potion heals 50, but never past the maximum.
+drinkPotion : Player -> Player
+drinkPotion p =
+    { p | health = min p.maxHealth (p.health + 50) }
 
 
--- Where row `y` is in the ring.
-slot : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (r : Int where 0 <= r && r < s.size)
-slot s y =
-    if s.base >= s.size - y then
-        s.base - (s.size - y)
+-- A curse lowers the maximum by 100, and health has to come down with it.
+curse : Player -> Player
+curse p =
+    let
+        newMax =
+            max 1 (p.maxHealth - 100)
+    in
+    { p | maxHealth = newMax, health = min p.health newMax }
+```
+
+`drinkPotion` changes one field, so the compiler asks whether the new health
+still fits under the maximum, and `min p.maxHealth ...` guarantees it. Leave
+the `min` out and the program doesn't build. The compiler shows a player
+whose maximum is 1, healed to 50:
+
+```
+-- CANNOT SHOW A REFINEMENT -------------------------------------- src/Main.geng
+
+Every `Player` keeps this, so a record of its shape built or updated here must:
+
+    0 <= player.health && player.health <= player.maxHealth && 1 <= player.maxHe
+alth && player.maxHealth <= 999
+
+and I cannot show it here:
+
+17|     { p | health = p.health + 50 }
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here, with this call's values for its names, that is:
+
+    0 <= p.health + 50 && p.health + 50 <= p.maxHealth && 0 < p.maxHealth && p.m
+axHealth <= 999
+
+What I know here:
+
+    0 <= p.health && p.health <= p.maxHealth && 0 < p.maxHealth
+        && p.maxHealth <= 999
+        from the invariant of `Player`
+
+With `p.health = 0` and `p.maxHealth = 1`, it is False.
+```
+
+`curse` is subtler. It lowers `maxHealth`, but the rule ties the two fields
+together, so health may now be too high. Forget `health = min p.health newMax`
+and the compiler refuses, showing a player at full health, 2 of 2, whose
+maximum drops to 1. You changed one field, and the rule made you deal with
+the other:
+
+```
+-- CANNOT SHOW A REFINEMENT -------------------------------------- src/Main.geng
+
+Every `Player` keeps this, so a record of its shape built or updated here must:
+
+    0 <= player.health && player.health <= player.maxHealth && 1 <= player.maxHe
+alth && player.maxHealth <= 999
+
+and I cannot show it here:
+
+27|     { p | maxHealth = newMax }
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here, with this call's values for its names, that is:
+
+    0 <= p.health && p.health <= newMax && 0 < newMax && newMax <= 999
+
+What I know here:
+
+    0 <= p.health && p.health <= p.maxHealth && 0 < p.maxHealth
+        && p.maxHealth <= 999
+        from the invariant of `Player`
+    (p.maxHealth - 100 <= 0 && newMax == 1)
+        || (0 < p.maxHealth - 100 && p.maxHealth - 100 == newMax)
+        from `max` on line 25
+
+With `newMax = 1`, `p.health = 2` and `p.maxHealth = 2`, it is False.
+```
+
+The rule also caps `maxHealth` at 999, which is how the compiler knows
+`p.health + 50` can't overflow. Everywhere else in the program, any
+`Player` can be read knowing its health is between 0 and its maximum, with
+no check at run time. In [puritty](https://github.com/gilramir/puritty), a
+terminal emulator written in Geng, a rule like this on the screen's layout
+is what lets every read of a screen row be proved inside the buffer. See
+[Refinement types](@/docs/intro-to-refinement-types.md).
+
+</details>
+
+### Overflow bugs
+
+Binary search is one of the first algorithms anyone learns, and for decades
+the textbook version had a bug. Its middle index is `(low + high) / 2`, and
+on an array of about a billion elements or more, `low + high` overflows. In
+2006 Joshua Bloch, who wrote the binary search in Java's standard library,
+[reported](https://research.google/blog/extra-extra-read-all-about-it-nearly-all-binary-searches-and-mergesorts-are-broken/)
+that his own version had it, "lying in wait for nine years or so" until it
+broke someone's program. Geng's compiler finds it, and proves the fixed
+version:
+
+```geng
+searchBetween : (items : Array Int) -> Int -> (low : Int where 0 <= low) -> (high : Int where high < Array.length items) -> Maybe Int
+searchBetween items target low high =
+    if low > high then
+        Nothing
 
     else
-        s.base + y
+        let
+            -- this was fixed so it cannot overflow
+            mid =
+                low + (high - low) // 2
 
-
--- Where row `y` starts in the buffer: a whole row always fits after it.
-rowOffset : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (r : Int where 0 <= r && r + s.stride <= Builder.length s.cells)
-rowOffset s y =
-    slot s y * s.stride
-
-
--- So reading a cell needs no bounds check and no Maybe.
-cellAt : (s : Screen) -> (y : Int where 0 <= y && y < s.rows) -> (x : Int where 0 <= x && x < s.cols) -> Int64
-cellAt s y x =
-    Builder.getProven (rowOffset s y + x) s.cells
+        ...
 ```
+
+<details class="more">
+<summary>The bug, the compiler's error, and the proof</summary>
+
+Geng's `Int` is 32-bit, as Java's is, so the same line overflows here too.
+The difference is that the compiler finds it. Write the textbook version and
+the program doesn't build:
+
+```
+-- ARITHMETIC MAY WRAP ------------------------------------------- src/Main.geng
+
+I cannot show that `low + high` stays inside `Int` here:
+
+19|                 (low + high) // 2
+                    ^^^^^^^^^^^^
+
+What I know here:
+
+    0 <= low                     from the refinement on `low`
+    high < Array.length items    from the refinement on `high`
+    low <= Array.length items    inferred for the loop `searchBetween`
+    low <= high                  from the test on line 13
+
+With `Array.length items = 2147483647`, `high = 2147483646` and `low = 2`, `low +
+high` is 2147483648, past the largest `Int`, 2147483647.
+
+`low + (high - low) // 2` is the same value and cannot wrap.
+```
+
+It names values that break it, and the fix. With that fix, the compiler
+proves the whole search: no sum overflows, every recursive call keeps `low`
+and `high` in their ranges, and `Array.getProven` reads inside the array, so
+the read needs no `Maybe` and no bounds check at run time. Nobody wrote the
+loop's invariant (`low <= Array.length items`); the compiler worked it out.
+
+```geng
+search : Array Int -> Int -> Maybe Int
+search items target =
+    searchBetween items target 0 (Array.length items - 1)
+
+
+searchBetween : (items : Array Int) -> Int -> (low : Int where 0 <= low) -> (high : Int where high < Array.length items) -> Maybe Int
+searchBetween items target low high =
+    if low > high then
+        Nothing
+
+    else
+        let
+            -- this was fixed so it cannot overflow
+            mid =
+                low + (high - low) // 2
+
+            -- proved inside the array: no Maybe, no check at run time
+            value =
+                Array.getProven mid items
+        in
+        if value == target then
+            Just mid
+
+        else if value < target then
+            searchBetween items target (mid + 1) high
+
+        else
+            searchBetween items target low (mid - 1)
+```
+
+</details>
 
 Geng is not a proof assistant like [Lean](https://lean-lang.org/) or
 [Rocq](https://rocq-prover.org/). You don't write proofs, and
